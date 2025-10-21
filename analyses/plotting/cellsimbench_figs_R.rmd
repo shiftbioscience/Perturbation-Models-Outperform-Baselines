@@ -1,0 +1,722 @@
+---
+title: "Fig1"
+author: "Francis Leblanc"
+date: "2025-09-18"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 3
+    number_sections: true
+    theme: united
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+# Load
+```{r message=FALSE, warning=FALSE}
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+library(ggrepel)
+library(patchwork)
+library(tidyverse)
+library(tidyr)
+library(fgsea)
+library(gridExtra)
+library(ggpubr)
+dir.create("figures")
+```
+
+# Supplementary Figure 1E & 6A: Mean Squared Error Comparison - Technical Duplicate vs Mean Baseline
+
+```{r fig.width=6, fig.height=8}
+mse_comparison_df <- read.csv("mse_comparison_data_replogle22k562gwps.csv")
+mse_comparison_df$delta_mse <- mse_comparison_df$mse_interpolated_dup - mse_comparison_df$mse_mean_baseline
+mse_comparison_df$delta_log_mse <- log(mse_comparison_df$mse_interpolated_dup) - log(mse_comparison_df$mse_mean_baseline)
+
+# Calculate percentages
+pct_mb_better <- round(100 * sum(mse_comparison_df$delta_mse > 0) / nrow(mse_comparison_df), 1)
+pct_td_better <- round(100 * sum(mse_comparison_df$delta_mse < 0) / nrow(mse_comparison_df), 1)
+
+# Calculate common axis limits for ID vs MB plot
+id_lims <- range(c(mse_comparison_df$mse_interpolated_dup, mse_comparison_df$mse_mean_baseline))
+id_x_min <- min(mse_comparison_df$mse_interpolated_dup)
+id_x_max <- max(mse_comparison_df$mse_interpolated_dup)
+id_y_min <- min(mse_comparison_df$mse_mean_baseline)
+id_y_max <- max(mse_comparison_df$mse_mean_baseline)
+
+# Create main scatter plot
+p <- mse_comparison_df %>%
+  ggplot(aes(x = mse_interpolated_dup, y = mse_mean_baseline, color = log10(deg_count + 1))) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black", linewidth = 0.5) +
+  geom_point() +
+  theme_classic() +
+  scale_x_log10(limits = id_lims) +
+  scale_y_log10(limits = id_lims) +
+  ylab("MSE(Mean Baseline) (\u2193)") +
+  xlab("MSE(Interpolated Duplicate) (\u2193)") +
+  scale_color_viridis_c(name = "log10(nDEG + 1)") +
+  coord_fixed() 
+
+# Create inset histogram with transparent background
+p_inset <- mse_comparison_df %>%
+  ggplot(aes(x = delta_log_mse, y = deg_count )) +
+  geom_point(size = 0.1, color = "grey27") +
+  geom_vline(xintercept = 0, color = "darkred", linetype = "dashed") +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8),
+    plot.background = element_rect(fill = "transparent", color = NA)
+  ) +
+  scale_y_log10()  +
+  xlim(-1,1) +
+  scale_x_continuous(limits = c(-1,1), breaks = c(-1, 0, 1)) +
+  labs(x = "Δ log(MSE)", y = "nDEG")
+
+p_inset2 <- mse_comparison_df %>%
+  ggplot(aes(x = delta_log_mse)) +
+  geom_histogram(fill = "grey27", color = "grey27", bins = 200) +
+  geom_vline(xintercept = 0, color = "darkred", linetype = "dashed") +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    plot.background = element_rect(fill = "transparent", color = NA)
+  ) +
+  scale_y_log10() +
+  xlim(-1,1) +
+  scale_x_continuous(limits = c(-1,1), breaks = c(-1, 0, 1)) +
+  labs(x = NULL, y = "Freq")
+
+p_inset <- p_inset2 + p_inset + plot_layout(nrow = 2, heights = c(1,2))
+
+# Combine main plot with inset using patchwork
+p_final <- p + inset_element(p_inset, left = 0.58, bottom = 0.00, right = 1.00, top = 0.45)
+
+mse_comparison_df$delta_mse <- mse_comparison_df$mse_tech_dup - mse_comparison_df$mse_mean_baseline
+mse_comparison_df$delta_log_mse <- log(mse_comparison_df$mse_tech_dup) - log(mse_comparison_df$mse_mean_baseline)
+
+# Calculate percentages
+pct_mb_better <- round(100 * sum(mse_comparison_df$delta_mse > 0) / nrow(mse_comparison_df), 1)
+pct_td_better <- round(100 * sum(mse_comparison_df$delta_mse < 0) / nrow(mse_comparison_df), 1)
+
+# Calculate common axis limits for TD vs MB plot
+td_lims <- range(c(mse_comparison_df$mse_tech_dup, mse_comparison_df$mse_mean_baseline))
+td_x_min <- min(mse_comparison_df$mse_tech_dup)
+td_x_max <- max(mse_comparison_df$mse_tech_dup)
+td_y_min <- min(mse_comparison_df$mse_mean_baseline)
+td_y_max <- max(mse_comparison_df$mse_mean_baseline)
+
+# Create main scatter plot
+p <- mse_comparison_df %>%
+  ggplot(aes(x = mse_tech_dup, y = mse_mean_baseline, color = log10(deg_count + 1))) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black", linewidth = 0.5) +
+  geom_point() +
+  theme_classic() +
+  scale_x_log10(limits = td_lims) +
+  scale_y_log10(limits = td_lims) +
+  ylab("MSE(Mean Baseline) (\u2193)") +
+  xlab("MSE(Technical Duplicate) (\u2193)") +
+  scale_color_viridis_c(name = "log10(nDEG + 1)") +
+  coord_fixed() 
+
+# Create inset histogram with transparent background
+p_inset <- mse_comparison_df %>%
+  ggplot(aes(x = delta_log_mse, y = deg_count )) +
+  geom_point(size = 0.1, color = "grey27") +
+  geom_vline(xintercept = 0, color = "darkred", linetype = "dashed") +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8),
+    plot.background = element_rect(fill = "transparent", color = NA)
+  ) +
+  scale_y_log10()  +
+  xlim(-1,1) +
+  scale_x_continuous(limits = c(-1,1), breaks = c(-1, 0, 1)) +
+  labs(x = "Δ log(MSE)", y = "nDEG")
+
+p_inset2 <- mse_comparison_df %>%
+  ggplot(aes(x = delta_log_mse)) +
+  geom_histogram(fill = "grey27", color = "grey27", bins = 200) +
+  geom_vline(xintercept = 0, color = "darkred", linetype = "dashed") +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    plot.background = element_rect(fill = "transparent", color = NA)
+  ) +
+  scale_y_log10() +
+  xlim(-1,1) +
+  scale_x_continuous(limits = c(-1,1), breaks = c(-1, 0, 1)) +
+  labs(x = NULL, y = "Freq")
+
+p_inset <- p_inset2 + p_inset + plot_layout(nrow = 2, heights = c(1,2))
+
+# Combine main plot with inset using patchwork
+p_final_td <- p + inset_element(p_inset, left = 0.58, bottom = 0.0, right = 1.00, top = 0.45)
+
+p_final_td / p_final
+
+ggsave("figures/fS1e_S6a.png", width = 6, height = 8, dpi = 300)
+```
+
+
+
+# Figure 2D: Dataset Performance - DRF Distribution by Metric (MSE vs WMSE)
+```{r fig.width=5, fig.height=3}
+metrics <- read.csv("per_perturbation_results.csv")
+
+# Pre-calculate Wilcoxon test for drf_interpolated
+paired_data_interp <- metrics %>%
+  filter(metric %in% c("mse", "wmse")) %>%
+  select(dataset, perturbation, metric, drf_interpolated) %>%
+  pivot_wider(names_from = metric, values_from = drf_interpolated) %>%
+  filter(!is.na(mse) & !is.na(wmse))
+
+wilcox_results <- paired_data_interp %>%
+  group_by(dataset) %>%
+  summarise(
+    mean_diff = mean(mse - wmse),
+    wilcox_p = wilcox.test(mse, wmse, paired = TRUE)$p.value,
+    .groups = "drop"
+  ) %>%
+  mutate(
+    p_adj = p.adjust(wilcox_p, method = "BH"),
+    label = paste0("mu[' '*Delta]==", format(round(-1 * mean_diff, 3), nsmall = 3), 
+                   "*','~p==", format(p_adj, scientific = TRUE, digits = 2))
+  )
+
+# Order datasets by median wmse DRF
+dataset_order <- metrics %>%
+  filter(metric == "wmse") %>%
+  group_by(dataset) %>%
+  summarise(med = mean(drf_interpolated, na.rm = TRUE)) %>%
+  arrange(med) %>%
+  pull(dataset)
+
+
+# F1B violin plots: drf_interpolated
+# Order datasets by median wmse DRF
+dataset_order <- metrics %>%
+  filter(metric == "wmse") %>%
+  group_by(dataset) %>%
+  summarise(med = mean(drf_interpolated, na.rm = TRUE)) %>%
+  arrange(med) %>%
+  pull(dataset)
+
+# Plot 1: All datasets
+plot_data <- metrics %>%
+  filter(metric %in% c("mse", "wmse")) %>%
+  mutate(dataset = factor(dataset, levels = dataset_order))
+
+p <- ggplot(plot_data, aes(x = drf_interpolated, y = dataset, fill = metric)) +
+  geom_boxplot(alpha = 0.6, position = position_dodge(width = 0.8), outlier.shape = NA) +
+  scale_fill_manual(
+    values = c("mse" = "black", "wmse" = "steelblue"),
+    labels = c("mse" = "MSE", "wmse" = "WMSE"),
+    name = "Metrics"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "top",
+    plot.margin = margin(5, 90, 5, 5)
+  ) +
+  xlab("DRF") +
+  geom_text(
+    data = wilcox_results %>% mutate(dataset = factor(dataset, levels = dataset_order)),
+    aes(x = Inf, y = dataset, label = label),
+    hjust = -0.1,
+    vjust = 0.5,
+    size = 2.7,
+    parse = TRUE,
+    inherit.aes = FALSE
+  ) +
+  coord_cartesian(clip = "off")
+p
+ggsave("figures/f2d.png", p, width = 5, height = 3, dpi = 300)
+```
+
+
+# Supplementary Figure: Mean DRF Across Datasets with Standard Error
+```{r}
+metrics_summary <- metrics %>%
+  filter(metric %in% c("mse", "wmse")) %>%
+  group_by(dataset, metric) %>%
+  summarise(
+    mean_drf = mean(drf_interpolated, na.rm = TRUE),
+    se_drf = sd(drf_interpolated, na.rm = TRUE) / sqrt(sum(!is.na(drf))),
+    mean_deg = mean(deg_count, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Add shape mapping for specific datasets
+metrics_summary$dataset_shape <- ifelse(
+  metrics_summary$dataset == "replogle22k562gwps", "replogle22k562gwps",
+  ifelse(metrics_summary$dataset == "replogle22k562", "replogle22k562", "other")
+)
+
+f1e_summary_plot <- ggplot(metrics_summary, aes(x = log10(mean_deg + 1), y = mean_drf, color = metric)) +
+  geom_errorbar(aes(ymin = mean_drf - se_drf, ymax = mean_drf + se_drf), width = 0.1) +
+  geom_point(size = 3) +
+  scale_color_manual(values = c("mse" = "black", "wmse" = "steelblue"),
+                     labels = c("mse" = "MSE", "wmse" = "WMSE"),
+                     name = "Metric") +
+  theme_classic() +
+  ggtitle("Mean DRF per dataset (±1 SE)") +
+  ylab("Mean DRF") + xlab("log10(mean nDEG + 1)") +
+  theme(
+    legend.position = c(0.02, 0.98),
+    legend.justification = c("left", "top"),
+    legend.box = "horizontal",
+    legend.text = element_text(size = 7),
+    legend.title = element_text(size = 8),
+    legend.key.size = unit(0.4, "cm"),
+    legend.spacing.x = unit(0.1, "cm")
+  )
+f1e_summary_plot
+```
+
+
+# Supplementary Figure 8: DRF Heatmap Across Datasets and Metrics (Technical Duplicate Baseline)
+```{r fig.width=7, fig.height=5}
+# Calculate mean DRF per dataset and metric
+heatmap_long <- metrics %>%
+  group_by(dataset, metric) %>%
+  summarise(mean_drf = mean(drf, na.rm = TRUE), .groups = "drop")
+
+# Order metrics and datasets by overall mean DRF
+metric_order <- heatmap_long %>%
+  group_by(metric) %>%
+  summarise(overall_mean = mean(mean_drf, na.rm = TRUE)) %>%
+  arrange(overall_mean) %>%
+  pull(metric)
+
+dataset_order <- heatmap_long %>%
+  group_by(dataset) %>%
+  summarise(overall_mean = mean(mean_drf, na.rm = TRUE)) %>%
+  arrange(overall_mean) %>%
+  pull(dataset)
+
+heatmap_long$metric <- factor(heatmap_long$metric, levels = metric_order)
+heatmap_long$dataset <- factor(heatmap_long$dataset, levels = dataset_order)
+
+# Barplot: mean DRF per metric (across datasets)
+bar_data <- heatmap_long %>%
+  group_by(metric) %>%
+  summarise(mean_drf = mean(mean_drf, na.rm = TRUE))
+
+bar_data$metric <- factor(bar_data$metric, levels = metric_order)
+
+barplot_top <- ggplot(bar_data, aes(x = metric, y = mean_drf, fill = mean_drf)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(
+    aes(label = sprintf("%.2f", mean_drf)),
+    size = 3,
+    vjust = ifelse(bar_data$mean_drf > 0.6, 1.2, -0.5)
+  ) +
+  scale_fill_gradient2(
+    low = "darkred", mid = "white", high = "steelblue", midpoint = 0,
+    name = "mean DRF"
+  ) +
+  theme_classic() +
+  ylab("mean DRF") + xlab(NULL) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(5, 5, 0, 5)) +
+  ggtitle("mean DRF Heatmap by Dataset and Metric")
+
+# Barplot: mean deg_count per dataset (horizontal, to go on right of heatmap)
+deg_data <- metrics %>%
+  group_by(dataset) %>%
+  summarise(mean_deg = mean(deg_count, na.rm = TRUE), .groups = "drop")
+
+deg_data$dataset <- factor(deg_data$dataset, levels = dataset_order)
+
+barplot_deg <- ggplot(deg_data, aes(x = mean_deg, y = dataset, fill = mean_deg)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = round(mean_deg), hjust = ifelse(mean_deg > 90, 1.2, -0.2)), 
+            size = 2.5) +
+  scale_fill_gradient(low = "grey80", high = "grey80", name = "mean nDEG") +
+  theme_classic() +
+  xlab("mean nDEG") + ylab(NULL) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.margin = margin(0, 5, 0, 0),
+        legend.position = "none")
+
+metric_labels <- c(
+  "pearson_deltapert" = "Pearson \u0394 Pert",
+  "pearson_deltapert_degs" = "Pearson \u0394 Pert DEGs",
+  "pearson_delta"          = "Pearson \u0394 Pert",
+  "centroid_accuracy"      = "NIR",
+  "mse"                    = "MSE",
+  "pearson_deltactrl"      = "Pearson \u0394 Ctrl",
+  "pearson_deltactrl_degs" = "Pearson \u0394 Ctrl DEGs",
+  "r2_deltactrl"           = expression(R^2~"\u0394"~Ctrl),
+  "r2_deltactrl_degs"      = expression(R^2~"\u0394"~Ctrl~DEGs),
+  "r2_deltapert"           = expression(R^2~"\u0394"~Pert),
+  "r2_deltapert_degs"      = expression(R^2~"\u0394"~Pert~DEGs),
+  "weighted_r2_deltactrl"  = expression(Weighted~R^2~"\u0394"~Ctrl),
+  "weighted_r2_deltapert"  = expression(Weighted~R^2~"\u0394"~Pert),
+  "wmse"                   = "WMSE"
+)
+
+heatmap_plot <- ggplot(heatmap_long, aes(x = metric, y = dataset, fill = mean_drf)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", mean_drf)), size = 3) +
+  scale_fill_gradient2(
+    name = "mean DRF",
+    low = "darkred", mid = "white", high = "steelblue", midpoint = 0,
+    guide = guide_colorbar(title.position = "top", title.hjust = 0.5)
+  ) +
+  theme_classic() +
+  xlab("Metric") + ylab("Dataset") +
+  scale_x_discrete(labels = metric_labels) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.margin = margin(0, 5, 0, 5),
+        legend.position = "bottom")
+
+combined_plot <- barplot_top + plot_spacer() + heatmap_plot + barplot_deg + 
+  plot_layout(heights = c(0.3, 1), widths = c(8, 1))
+
+combined_plot
+ggsave("figures/fS8.png", combined_plot, width = 7, height = 5, dpi = 300)
+```
+
+# Figure 2E: DRF Heatmap Across Datasets and Metrics (Interpolated Baseline) 
+```{r fig.width=7, fig.height=5}
+# Calculate mean DRF per dataset and metric
+heatmap_long <- metrics %>%
+  group_by(dataset, metric) %>%
+  summarise(mean_drf = mean(drf_interpolated, na.rm = TRUE), .groups = "drop")
+
+# Order metrics and datasets by overall mean DRF
+metric_order <- heatmap_long %>%
+  group_by(metric) %>%
+  summarise(overall_mean = mean(mean_drf, na.rm = TRUE)) %>%
+  arrange(overall_mean) %>%
+  pull(metric)
+
+dataset_order <- heatmap_long %>%
+  group_by(dataset) %>%
+  summarise(overall_mean = mean(mean_drf, na.rm = TRUE)) %>%
+  arrange(overall_mean) %>%
+  pull(dataset)
+
+heatmap_long$metric <- factor(heatmap_long$metric, levels = metric_order)
+heatmap_long$dataset <- factor(heatmap_long$dataset, levels = dataset_order)
+
+# Barplot: mean DRF per metric (across datasets)
+bar_data <- heatmap_long %>%
+  group_by(metric) %>%
+  summarise(mean_drf = mean(mean_drf, na.rm = TRUE))
+
+bar_data$metric <- factor(bar_data$metric, levels = metric_order)
+
+barplot_top <- ggplot(bar_data, aes(x = metric, y = mean_drf, fill = mean_drf)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(
+    aes(label = sprintf("%.2f", mean_drf)),
+    size = 2.5,
+    vjust = ifelse(bar_data$mean_drf > 0.25, 1.2, -0.5)
+  ) +
+  scale_fill_gradient2(
+    low = "darkred", mid = "white", high = "steelblue", midpoint = 0,
+    name = "mean DRF"
+  ) +
+  theme_classic() +
+  ylab("mean DRF") + xlab(NULL) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = margin(5, 5, 0, 5)) +
+  ggtitle("Mean DRF Heatmap by Dataset and Metric")
+
+# Barplot: mean deg_count per dataset (horizontal, to go on right of heatmap)
+deg_data <- metrics %>%
+  group_by(dataset) %>%
+  summarise(mean_deg = mean(deg_count, na.rm = TRUE), .groups = "drop")
+
+deg_data$dataset <- factor(deg_data$dataset, levels = dataset_order)
+
+barplot_deg <- ggplot(deg_data, aes(x = mean_deg, y = dataset, fill = mean_deg)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = round(mean_deg), hjust = ifelse(mean_deg > 90, 1.2, -0.2)), 
+            size = 2.5) +
+  scale_fill_gradient(low = "grey80", high = "grey80", name = "mean nDEG") +
+  theme_classic() +
+  xlab("mean\nnDEG") + ylab(NULL) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.margin = margin(0, 5, 0, 0),
+        legend.position = "none")
+
+heatmap_plot <- ggplot(heatmap_long, aes(x = metric, y = dataset, fill = mean_drf)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", mean_drf)), size = 3) +
+  scale_fill_gradient2(
+    name = "mean DRF",
+    low = "darkred", mid = "white", high = "steelblue", midpoint = 0,
+    guide = guide_colorbar(title.position = "top", title.hjust = 0.5)
+  ) +
+  theme_classic() +
+  xlab("Metric") + ylab("Dataset") +
+  scale_x_discrete(labels = metric_labels) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.margin = margin(0, 5, 0, 5),
+        legend.position = "bottom")
+
+combined_plot <- barplot_top + plot_spacer() + heatmap_plot + barplot_deg + 
+  plot_layout(heights = c(0.3, 1), widths = c(8, 1))
+
+combined_plot
+ggsave("figures/f2e.png", combined_plot, width = 7, height = 5, dpi = 300)
+```
+
+# Supplementary Figure: DRF Comparison Between Replogle K562 Datasets (GWPS vs Essential)
+
+```{r}
+rp22 <- metrics %>%
+  filter(dataset %in% c("replogle22k562", "replogle22k562gwps"),
+         metric %in% c("mse", "pearson_deltactrl"))
+plot_a <- rp22 %>%
+  ggplot(aes(x = dataset, y = drf_interpolated, color = metric)) +
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.5, dodge.width = 0.75), 
+              size = 0.01, alpha = 0.4) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5, position = position_dodge(width = 0.75)) +
+  theme_classic() +
+  scale_color_manual(values = c("mse" = "black", "pearson_deltactrl" = "grey"),
+                     labels = c("mse" = "MSE", "pearson_deltactrl" = "Pearson Δ"),
+                     name = "Metric") +
+  labs(x = "Dataset", y = "DRF") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top",
+    legend.text = element_text(size = 7),
+    legend.title = element_text(size = 8)
+  )
+plot_a
+```
+
+
+# Gene Set Enrichment Analysis: TF Target Self-Enrichment
+
+```{r}
+# Run for all genes (uncomment to run)
+genes_to_test <- c("AR", "ATF2", "ATF3", "BCLAF1", "BHLHE40", "BRCA1", "CBX3",
+                   "CEBPB", "CEBPD", "CHD1", "CREB1", "CTCF", "E2F1", "E2F4",
+                   "E2F6", "EGR1", "ELF1", "ERG", "ESR1", "ETS1", "EZH2", "FLI1",
+                   "FOS", "FOSL2", "FOXA1", "FOXA2", "FOXM1", "FOXP2", "GABPA",
+                   "GATA1", "GATA2", "HDAC2", "HNF4A", "IRF1", "IRF3", "IRF8",
+                   "KAT2A", "KLF4", "MAX", "MYC", "MYOD1", "NANOG", "NELFE",
+                   "NFE2L2", "NFIC", "NFYA", "NFYB", "NR2C2", "NRF1", "PBX3",
+                   "PML", "POU5F1", "PPARD", "PPARG", "RAD21", "RCOR1", "RELA",
+                   "REST", "RFX5", "RUNX1", "SALL4", "SIN3A", "SIX5", "SMAD4",
+                   "SMC3", "SP1", "SP2", "SPI1", "SRF", "STAT3", "STAT5A",
+                   "SUZ12", "TAF1", "TAF7", "TCF3", "TCF7L2", "TP53", "TP63",
+                   "TRIM28", "UBTF", "USF1", "USF2", "VDR", "YY1", "ZBTB33",
+                   "ZBTB7A", "ZC3H11A", "ZEB1", "ZKSCAN1", "ZNF384")
+
+if (!file.exists("gsea_input_for_R/fgsea_all_results.csv")) {
+
+  # Load ChEA gene sets
+  chea_lines <- readLines("../../data/cellsimbench_natmeth/ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X.txt")
+  
+  # Extract TF name and label (CHEA or ENCODE)
+  chea_split <- strsplit(chea_lines, "\t")
+  chea_names_labels <- sapply(chea_split, function(x) x[1])
+  chea_labels <- ifelse(grepl("CHEA", chea_names_labels), "CHEA",
+                        ifelse(grepl("ENCODE", chea_names_labels), "ENCODE", NA))
+  chea_names <- gsub(" CHEA| ENCODE", "", chea_names_labels)
+  
+  # Remove empty elements and build gene sets
+  chea_list <- lapply(chea_split, function(x) x[x != ""])
+  chea_sets <- setNames(lapply(chea_list, function(x) x[-1]), chea_names)
+  
+  # genes_to_test <- c("AR", "NRF1","RUNX1", "SALL4", "SIN3A")
+  all_fgsea_results <- list()
+  
+  for (gene in genes_to_test) {
+    ranked_file <- paste0("gsea_input_for_R/", gene, "_ranked_genes.csv")
+    if (!file.exists(ranked_file)) next
+  
+    ranked_df <- read.csv(ranked_file)
+    gene_scores <- setNames(ranked_df$score, ranked_df$gene)
+  
+    fgsea_res <- fgsea(
+      pathways = chea_sets,
+      stats = gene_scores,
+      minSize = 10,
+      maxSize = 5000
+    )
+  
+    fgsea_res$query_gene <- gene
+    all_fgsea_results[[gene]] <- fgsea_res
+  
+    # Get self-enrichment result
+    self_enrich <- fgsea_res %>% filter(pathway == gene)
+    if (nrow(self_enrich) > 0) {
+      print(paste0(gene, " - NES: ", round(self_enrich$NES, 3),
+                   ", padj: ", format(self_enrich$padj, scientific = TRUE)))
+    }
+  }
+  
+  # Combine all results
+  saveRDS(all_fgsea_results, "gsea_input_for_R/all_fgsea_results.rds")
+  combined_fgsea <- bind_rows(all_fgsea_results) %>% as.data.frame()
+  
+  # Add rank within each query_gene test (by NES, descending)
+  combined_fgsea <- combined_fgsea %>%
+    group_by(query_gene) %>%
+    mutate(rank_by_NES = rank(-abs(NES), ties.method = "first")) %>%
+    ungroup()
+  
+  # Add self-enrichment rank (rank when pathway == query_gene)
+  combined_fgsea <- combined_fgsea %>%
+    group_by(query_gene) %>%
+    mutate(self_enrichment_rank = ifelse(pathway == query_gene, rank_by_NES, NA)) %>%
+    mutate(self_enrichment_rank = max(self_enrichment_rank, na.rm = TRUE)) %>%
+    mutate(self_enrichment_rank = ifelse(is.infinite(self_enrichment_rank), NA, self_enrichment_rank)) %>%
+    ungroup()
+  
+  df_combined_fgsea <- combined_fgsea %>% 
+    select(-leadingEdge) %>% 
+    as.data.frame()
+  write.csv(df_combined_fgsea, "gsea_input_for_R/fgsea_all_results.csv", row.names = FALSE)
+}
+
+df_combined_fgsea <- read.csv("gsea_input_for_R/fgsea_all_results.csv")
+all_fgsea_results <- readRDS("gsea_input_for_R/all_fgsea_results.rds")
+
+self_enrich_summary <- df_combined_fgsea %>%
+  filter(pathway == query_gene) %>%
+  select(query_gene, pathway, NES, padj, pval, rank_by_NES) %>%
+  arrange(rank_by_NES)
+
+write.csv(self_enrich_summary, "gsea_input_for_R/fgsea_summary.csv", row.names = FALSE)
+```
+
+## Supplementary: NES Ranking Plots for Top Self-Enriched TFs
+
+```{r fig.width=7, fig.height=4.5}
+test <- metrics %>% 
+  filter(metric %in% c("mse", "wmse"),
+         dataset == "replogle22k562gwps",
+         perturbation %in% genes_to_test) 
+
+test_m <- merge(test, self_enrich_summary, by.x = "perturbation", by.y = "query_gene")
+test_m_wide <- test_m %>%
+  select(-c("drf", "drf_mean", "drf_sparsemean", "drf_ctrl")) %>% 
+  pivot_wider(names_from = "metric", values_from = "drf_interpolated") %>% 
+  mutate(delta_drf = wmse - mse)
+
+best_ex <- test_m_wide %>% 
+  filter(rank_by_NES <= 5,
+         delta_drf > 0.1,
+         mse < 0.1) %>% 
+  pull(perturbation)
+
+# Collect all 9 plots in a list
+fgsea_plots <- lapply(best_ex, function(gene) {
+  fgsea_res <- all_fgsea_results[[gene]]
+  fgsea_res$pathway_unique <- make.unique(fgsea_res$pathway)
+  
+  ggplot(fgsea_res, aes(x = reorder(pathway_unique, NES), y = NES)) +
+    geom_point(aes(color = pathway == gene), size = 0.5) +
+    scale_color_manual(values = c("black", "red"), guide = "none") +
+    ggrepel::geom_label_repel(
+      data = subset(fgsea_res, pathway == gene),
+      aes(label = gene), 
+      color = "black",
+      size = 3,
+      min.segment.length = 0,
+      alpha = 0.7
+    ) +
+    theme_classic() +
+    theme(plot.subtitle = element_text(size = 9)) +
+    labs(x = "TF gene set ranks", y = "NES") +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+})
+
+# Combine all 9 plots in a 3x3 patchwork grid
+fgsea_patchwork <- wrap_plots(fgsea_plots, ncol = 3)
+fgsea_patchwork
+
+# ggsave("figures/fSX_NES_ranks_examples.png", width = 7, height = 4.5, dpi = 300)
+```
+
+## Supplementary: DRF vs DEG Count Highlighting Top Self-Enriched TFs
+```{r}
+plot_c <- metrics %>% 
+  filter(metric %in% c("mse", "wmse"),
+         dataset == "replogle22k562gwps") %>%
+  ggplot(aes(log10(deg_count + 1), drf_interpolated)) +
+  geom_point(data = ~subset(., metric == "wmse"), aes(color = metric), size = 0.5) +
+  geom_point(data = ~subset(., metric == "mse"), aes(color = metric), size = 0.5) +
+  ggrepel::geom_label_repel(
+    data = ~subset(., perturbation %in% best_ex),
+    aes(label = perturbation,
+        color = metric),
+    min.segment.length = 0,
+    size = 3,
+    alpha = 0.7,
+    max.overlaps = 50
+  ) +
+  scale_color_manual(values = c("mse" = "black", "wmse" = "steelblue"),
+                     labels = c("mse" = "MSE", "wmse" = "WMSE"),
+                     name = "Metric") +
+  theme_classic() +
+  theme(
+    legend.position = c(0.98, 0.02),
+    legend.justification = c("right", "bottom"),
+    legend.background = element_rect(fill = "transparent", colour = NA)
+  ) +
+  ggtitle("Replogle22k562gwps") +
+  ylab("DRF") + xlab("log10(nDEG + 1)")
+plot_c
+```
+
+# Supplementary Figure 7 (assembly)
+```{r fig.width=10, fig.height=8}
+# Extract individual plots
+plot_b <- fgsea_plots[[5]]  # Last element in fgsea_plots
+plot_d <- wrap_plots(fgsea_plots[1:4], ncol = 2)  # First 4 elements in 2x2 grid
+plot_e <- f1e_summary_plot
+
+plot_a_f <- plot_a + coord_flip()
+
+top_left <- wrap_plots(plot_a_f / plot_b)
+top_section <- top_left + plot_d + plot_layout(widths = c(1,2)) 
+bottom_section <- plot_c | plot_e
+
+final_assembly <- top_section / bottom_section + 
+  plot_layout(heights = c(3, 2))
+
+final_assembly
+
+ggsave("figures/fS7_assembly.png", final_assembly, width = 10, height = 8, dpi = 600)
+```
+
+
+
+
+```{r}
+sessionInfo()
+```
+
+
