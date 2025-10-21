@@ -1,0 +1,11 @@
+This distribution includes modifications by the CellSimBench team.
+
+Copyright (c) 2025 Genentech, Inc.
+
+Licensed under the Genentech Non-Commercial Software License Version 1.0 (September 2022). Non-commercial use only. A copy of the License is provided in this directory as "LICENSE" and in built images at "/LICENSE".
+
+Upstream attribution:
+- PRESAGE (original project). Portions of this distribution include or depend on the PRESAGE project. The upstream license is provided at docker/presage/ref/PRESAGE/LICENSE.txt. The upstream project did not include a NOTICE file at the time of integration.
+
+Additional attributions:
+- Pathway embeddings cache retrieved from Zenodo as referenced in docker/presage/Dockerfile. See the source referenced therein for terms and attribution requirements.

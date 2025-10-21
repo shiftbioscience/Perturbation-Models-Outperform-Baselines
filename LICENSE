@@ -9,8 +9,14 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+*This license applies only to the portions of this repository that are
+original works of Shift Bioscience or other contributors listed herein.*
+
+*All components are included solely for academic benchmarking purposes and
+are governed by their original licenses. In particular, files in
+`docker/presage/` and any derived artifacts remain subject to the Genentech
+Non-Commercial Software License Version 1.0 (September 2022). See
+`docker/presage/LICENSE` and `docker/presage/NOTICE` for details.*
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

@@ -1,0 +1,4 @@
+cell-gears==0.0.2
+torch==2.3.0
+torch-geometric==2.6.1
+scgpt

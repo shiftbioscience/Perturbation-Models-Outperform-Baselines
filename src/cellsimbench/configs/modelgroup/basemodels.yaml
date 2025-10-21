@@ -1,0 +1,15 @@
+# Multi-model benchmark configuration for comparing different model types
+# This references existing model configs without duplicating hyperparameters
+
+models:
+  - gears
+  - scgpt
+  - sclambda
+  - presage
+  - fmlp_esm2
+  - fmlp_geneformer
+  - fmlp_scgpt
+  - fmlp_genept
+  # - fmlp_scgpt_spatial
+
+description: "Compare different perturbation response models" 

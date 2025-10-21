@@ -1,0 +1,60 @@
+defaults:
+  - dataset: norman19
+  - model: baselines
+  - modelgroup: null  # Optional modelgroup config for multi-model comparisons (renamed from 'group')
+  - _self_
+
+# Execution settings (NOT part of model hash)
+execution:
+  parallel_folds: true              # Enable parallel fold processing
+  max_parallel_folds: null          # Limit (null = use all available GPUs)
+
+experiment:
+  name: "${model.name}_${dataset.name}"
+  description: "Benchmarking ${model.name} on ${dataset.name}"
+  tags: []
+  
+output:
+  save_predictions: true
+  save_metrics: true
+  generate_plots: true  # Changed default to true
+  
+  # NEW: Plotting configuration
+  plotting:
+    # Multi-covariate handling - only "separate" for now
+    covariate_aggregation: "separate"  # Create separate plots for each covariate/donor
+    
+    # Plot types to generate
+    condition_comparison: true
+    variance_rank: false
+    deg_quantile_impact: true
+    
+    # Plot parameters
+    variance_analysis:
+      top_k_genes: 2048
+    deg_quantiles:
+      n_quantiles: 5
+    metrics_to_plot:
+      - mse
+      - wmse 
+      - pearson_deltactrl
+      - pearson_deltactrl_degs
+      - pearson_deltapert
+      - pearson_deltapert_degs
+      - r2_deltactrl
+      - r2_deltactrl_degs
+      - r2_deltapert
+      - r2_deltapert_degs
+      - weighted_r2_deltactrl
+      - weighted_r2_deltapert
+    
+    # Output options
+    save_formats: ["png"]
+    dpi: 300
+  
+hydra:
+  run:
+    dir: outputs/${experiment.name}/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: outputs/multirun/${experiment.name}/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra:job.num} 
