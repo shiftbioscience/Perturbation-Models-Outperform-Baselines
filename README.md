@@ -197,10 +197,6 @@ If you use this code or data, please cite:
 }
 ```
 
-## License
-
-This project is made available under the CC-BY 4.0 International license.
-
 ## Contact
 
 For questions, contact: henry@shiftbioscience.com
