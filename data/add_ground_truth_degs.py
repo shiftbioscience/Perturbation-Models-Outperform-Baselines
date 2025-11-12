@@ -248,7 +248,7 @@ Examples:
         from concurrent.futures import ProcessPoolExecutor, as_completed
         from functools import partial
         
-        config_dir = Path('cellsimbench/configs/dataset')
+        config_dir = Path('src/cellsimbench/configs/dataset')
         yaml_files = list(config_dir.glob('*.yaml'))
         
         datasets_to_process = []

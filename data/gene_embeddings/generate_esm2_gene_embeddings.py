@@ -264,7 +264,7 @@ def get_esm2_embeddings(
 
     # Load ESM2 model
     print(f"Loading ESM2 model: {model_name}")
-    model = EsmModel.from_pretrained(model_name, device_map="auto").half()
+    model = EsmModel.from_pretrained(model_name, device_map="auto", use_safetensors=True).half()
     tokenizer = AutoTokenizer.from_pretrained(model_name, device_map="auto")
     
     # Prepare sequence data for processing

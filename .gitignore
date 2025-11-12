@@ -36,3 +36,4 @@ docker/**/results/**
 *.vcc
 data/gene_embeddings/PRESAGE/
 misc.ipynb
+data/gene_embeddings/Geneformer/

@@ -143,7 +143,7 @@ def compute_pearson_delta(reference, prediction, groundtruth):
 
 # %% Read data
 # Define file path
-data_path = Path("/home/gabriel/CellSimBench/data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad")
+data_path = Path("./data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad")
 print(f"Loading data from: {data_path}")
 print("-" * 80)
 

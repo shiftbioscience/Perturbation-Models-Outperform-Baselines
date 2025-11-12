@@ -269,7 +269,7 @@ if not SKIP_COMPUTATION:
                 dataset_metrics[dataset_name][mapped_name][metric_name] = pert_dict
         
         # Load dataset config for later use
-        config_path = Path(f"cellsimbench/configs/dataset/{dataset_name}.yaml")
+        config_path = Path(f"src/cellsimbench/configs/dataset/{dataset_name}.yaml")
         if config_path.exists():
             with open(config_path, 'r') as f:
                 import yaml
@@ -340,7 +340,7 @@ if not SKIP_COMPUTATION:
         
         # Load dataset config if not already loaded
         if dataset_name not in dataset_configs:
-            config_path = Path(f"cellsimbench/configs/dataset/{dataset_name}.yaml")
+            config_path = Path(f"src/cellsimbench/configs/dataset/{dataset_name}.yaml")
             with open(config_path, 'r') as f:
                 import yaml
                 dataset_config = yaml.safe_load(f)

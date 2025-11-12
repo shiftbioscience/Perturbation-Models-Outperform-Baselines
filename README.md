@@ -26,16 +26,20 @@ git clone https://github.com/shiftbioscience/Perturbation-Models-Outperform-Base
 cd Perturbation-Models-Outperform-Baselines
 
 # Install using uv (recommended) or pip
-uv pip install -e .
+uv sync
 # OR
 pip install -e .
+
+# Activate the environment
+. ./.venv/bin/activate
+
 ```
 
 **Requirements:** Python ≥3.12
 
 ## Data Preparation
 
-Process all 14 Perturb-seq datasets (~2.5M cells across 9 cell types):
+Process all 14 Perturb-seq datasets:
 
 ```bash
 # Step 1: Download and preprocess all datasets
@@ -48,9 +52,14 @@ python data/add_ground_truth_degs.py --all --workers 4
 # Step 3: Add interpolated duplicate baseline (positive control)
 python data/add_interpolated_baseline.py --all --workers 4
 
-# Step 4: Generate foundation model embeddings (ESM2, Geneformer, GenePT) for Norman19 dataset
-# See data/gene_embeddings/gene_embeddings_README.md for environment setup
-# This step is required before transferring embeddings to other datasets
+# Step 4: Generate foundation model embeddings (ESM2, Geneformer, GenePT, scGPT) for Norman19 dataset
+# OPTIONAL unless you plan to run the fMLP models.
+# First, create the required conda environments:
+conda env create -f data/gene_embeddings/envs/src-geneformer.yaml
+conda env create -f data/gene_embeddings/envs/src-esm2.yaml
+conda env create -f data/gene_embeddings/envs/src-scgpt.yaml
+
+# Then generate embeddings (this step is required before transferring embeddings to other datasets)
 bash data/gene_embeddings/gather_embeddings.sh \
     data/norman19/norman19_processed_complete.h5ad \
     data/norman19/norman19_processed_complete.embeddings.h5ad
@@ -62,12 +71,26 @@ python data/batch_transfer_embeddings.py --workers 4
 
 **Note:** The full pipeline may take several hours depending on your system. Each script supports `--force` to recompute existing data.
 
+**Requirements for Step 4:**
+- Conda must be installed and available in PATH
+- The conda environments (`src-scgpt`, `src-geneformer`, `src-esm2`) must be created before running `gather_embeddings.sh`
+- The script can be run from the project root: `bash data/gene_embeddings/gather_embeddings.sh ...`
+- The geneformer package will be automatically installed from HuggingFace when the script runs
+
+**Caching behavior:**
+- The script caches intermediate results for each stage (GenePT, scGPT, Geneformer, ESM2)
+- If a stage has already been completed, it will be skipped on subsequent runs
+- To force regeneration of all embeddings, add `--force` flag:
+  ```bash
+  bash data/gene_embeddings/gather_embeddings.sh INPUT OUTPUT --force
+  ```
+
 **What these scripts do:**
 - `run_all_get_data.py` - Downloads raw data from sources, performs QC, creates train/test splits
 - `add_ground_truth_degs.py` - Calculates DEGs from first half of tech duplicate splits for calibration
 - `add_interpolated_baseline.py` - Creates interpolated duplicate baseline (key positive control)
-- `gather_embeddings.sh` - Generates foundation model gene embeddings (ESM2, Geneformer, GenePT)
-- `batch_transfer_embeddings.py` - Transfers embeddings from reference dataset to all other datasets
+- `gather_embeddings.sh` - Generates foundation model gene embeddings (GenePT, scGPT, Geneformer, ESM2). Requires conda environments to be created first
+- `batch_transfer_embeddings.py` - Transfers gene embeddings from reference dataset to all other datasets
 
 ## Building Model Docker Containers
 

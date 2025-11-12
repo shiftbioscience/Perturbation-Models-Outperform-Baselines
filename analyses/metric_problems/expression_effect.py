@@ -14,9 +14,9 @@ from scipy.stats import pearsonr
 # %% Read data
 
 path_dict = {
-    "replogle22k562gwps": Path("/home/gabriel/CellSimBench/data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad"),  # 256 cells
-    "replogle22rpe1": Path("/home/gabriel/CellSimBench/data/replogle22rpe1/replogle22rpe1_processed_complete.h5ad"),  # 128 cells
-    "replogle22k562": Path("/home/gabriel/CellSimBench/data/replogle22k562/replogle22k562_processed_complete.h5ad")  # 128 cells
+    "replogle22k562gwps": Path("./data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad"),  # 256 cells
+    "replogle22rpe1": Path("./data/replogle22rpe1/replogle22rpe1_processed_complete.h5ad"),  # 128 cells
+    "replogle22k562": Path("./data/replogle22k562/replogle22k562_processed_complete.h5ad")  # 128 cells
 }
 
 dataset_name = "replogle22k562gwps"  # Change this parameter as needed

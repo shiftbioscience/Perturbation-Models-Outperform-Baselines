@@ -54,7 +54,7 @@ class DockerRunner:
         Handles resource limits, GPU support, volume mounting, and streaming logs.
         
         Args:
-            image: Docker image name (e.g., 'cellsimbench/sclambda:latest').
+            image: Docker image name (e.g., 'src/cellsimbench/sclambda:latest').
             command: Command to run in container (e.g., ['train', '/config.json']).
             volumes: Volume mount configuration mapping host paths to container paths.
             docker_config: Docker settings including memory, cpus, gpu support.

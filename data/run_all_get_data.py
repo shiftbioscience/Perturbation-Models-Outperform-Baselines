@@ -74,7 +74,7 @@ def run_get_data_script(dataset_name, force_recompute=False):
             return (dataset_name, False, f"Script not found: {script_path}", 0)
         
         # Load config to check if already processed
-        config_path = Path(f"cellsimbench/configs/dataset/{dataset_name}.yaml")
+        config_path = Path(f"src/cellsimbench/configs/dataset/{dataset_name}.yaml")
         if config_path.exists():
             with open(config_path, 'r') as f:
                 config = yaml.safe_load(f)
@@ -144,7 +144,7 @@ def run_all_datasets(force_recompute=False, num_workers=None, specific_datasets=
     """
     
     # Load all dataset configs
-    config_dir = "cellsimbench/configs/dataset"
+    config_dir = "src/cellsimbench/configs/dataset"
     all_configs = load_dataset_configs(config_dir)
     
     # Filter to specific datasets if requested
@@ -290,7 +290,7 @@ def main():
     
     if args.dry_run:
         # Just show what would be processed
-        config_dir = "cellsimbench/configs/dataset"
+        config_dir = "src/cellsimbench/configs/dataset"
         configs = load_dataset_configs(config_dir)
         
         if args.datasets:

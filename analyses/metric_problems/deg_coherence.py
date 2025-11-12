@@ -17,7 +17,7 @@ plt.rcParams['savefig.dpi'] = 200
 
 # %% Load data
 
-data_path = Path("/home/gabriel/CellSimBench/data/frangieh21/frangieh21_processed_complete.h5ad")
+data_path = Path("./data/frangieh21/frangieh21_processed_complete.h5ad")
 print(f"Loading data from: {data_path}")
 adata = sc.read_h5ad(data_path)
 print(f"Data loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
@@ -277,7 +277,7 @@ plt.show()
 
 # %% Save results
 
-output_path = Path("/home/gabriel/CellSimBench/analyses/metric_problems/deg_coherence_results.csv")
+output_path = Path("./analyses/metric_problems/deg_coherence_results.csv")
 results_df.to_csv(output_path, index=False)
 print(f"\nResults saved to: {output_path}")
 
