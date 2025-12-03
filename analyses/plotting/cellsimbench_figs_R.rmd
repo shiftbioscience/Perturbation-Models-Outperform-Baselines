@@ -364,7 +364,7 @@ metric_labels <- c(
   "pearson_deltapert" = "Pearson \u0394 Pert",
   "pearson_deltapert_degs" = "Pearson \u0394 Pert DEGs",
   "pearson_delta"          = "Pearson \u0394 Pert",
-  "centroid_accuracy"      = "NIR",
+  "nir"      = "NIR",
   "mse"                    = "MSE",
   "pearson_deltactrl"      = "Pearson \u0394 Ctrl",
   "pearson_deltactrl_degs" = "Pearson \u0394 Ctrl DEGs",

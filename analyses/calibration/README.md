@@ -9,3 +9,9 @@ First:
 uv run bash analyses/calibration/run_all_dataset_baselines.sh
 ```
 
+Then, 
+
+```bash
+uv run python analyses/calibration/calibration_analysis.py
+```
+

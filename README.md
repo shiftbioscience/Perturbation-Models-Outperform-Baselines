@@ -133,7 +133,7 @@ done
 
 ## Reproducing the Analyses
 
-### 1. Calibration Analysis (Figure 1B, Main Results)
+### 1. Calibration Analysis (`analyses/calibration/`)
 
 This analysis computes the Dynamic Range Fraction (DRF) and other calibration metrics across all datasets and evaluation metrics.
 
@@ -149,20 +149,20 @@ python analyses/calibration/calibration_analysis.py
 - `analyses/calibration/baseline_outputs/*/` - Per-dataset baseline predictions and metrics
 - `analyses/calibration/results/` - Calibration plots and summary statistics
 
-### 2. Metric Problem Analyses (Figures 2-4)
+### 2. Metric Problem Analyses 
 
 These scripts demonstrate specific pathologies in common evaluation metrics:
 
 ```bash
 cd analyses/metric_problems
 
-# Control bias analysis (Supplementary Figure)
+# Control bias analysis 
 python control_bias.py
 
-# Signal dilution analysis (Figure 3)
+# Signal dilution analysis 
 python signal_dilution.py
 
-# DEG sparsity and coherence (Figure 4)
+# DEG sparsity and coherence
 python effect_sparsity.py
 python deg_coherence.py
 
@@ -187,7 +187,7 @@ python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.c
 ## Analysis Scripts Overview
 
 **Calibration Analysis** (`analyses/calibration/`):
-- Computes positive controls (interpolated duplicate, technical duplicate) and negative controls (mean baseline, control baseline)
+- Computes positive controls (interpolated duplicate, technical duplicate) 
 - Calculates Dynamic Range Fraction (DRF) for 13 evaluation metrics across 14 datasets
 - Generates calibration heatmaps and per-dataset comparisons
 
@@ -199,10 +199,6 @@ python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.c
 - `cell_titration.py` - Tests metric behavior with varying cell counts
 - `paper_plots.py` - Generates publication-ready figures
 
-## Key Metrics Evaluated
-
-- **Poorly calibrated**: MSE, Pearson(Δctrl), R²(Δctrl)
-- **Well calibrated**: WMSE, Weighted R²(Δ), Normalized Inverse Rank (NIR)
 
 See the preprint for full details on metric definitions and calibration assessment.
 
@@ -213,7 +209,7 @@ If you use this code or data, please cite:
 ```bibtex
 @article{miller2025perturbation,
   title={Deep Learning-Based Genetic Perturbation Models Do Outperform Uninformative Baselines on Well-Calibrated Metrics},
-  author={Miller, Henry E. and Mejia, Gabriel M. and Leblanc, Francis J. A. and Wang, Bo and Swain, Brendan and Camillo, Lucas Paulo de Lima},
+  author={Miller, Henry E. and Mejia, Gabriel M. and Leblanc, Francis J. A., and Swain, Brendan, and Wang, Bo, and Camillo, Lucas Paulo de Lima},
   journal={bioRxiv},
   year={2025},
   doi={10.1101/2025.10.20.683304}

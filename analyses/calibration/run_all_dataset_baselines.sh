@@ -13,9 +13,9 @@ DATASETS=(
 #     'kaden25rpe1' 'kaden25fibroblast' 'sunshine23' 'wessels23'
 # )
 
-DATASETS=(
-    'replogle22k562gwps'
-)
+# DATASETS=(
+#     'replogle22k562gwps'
+# )
 
 
 # Maximum number of parallel jobs (adjust based on your system)
