@@ -133,7 +133,16 @@ done
 
 ## Reproducing the Analyses
 
-### 1. Calibration Analysis (`analyses/calibration/`)
+### 1. Perturbation Strength Analysis
+
+Examines how the mean baseline is a better estimator than the technical duplicate baseline when genes are not significantly detected as DEGs. Also shows the effect of sample size on the technical duplicate baseline:
+
+```bash
+# From project root
+uv run python analyses/perturbation_strength/perturbation_strenght.py
+```
+
+### 2. Calibration Analysis (`analyses/calibration/`)
 
 This analysis computes the Dynamic Range Fraction (DRF) and other calibration metrics across all datasets and evaluation metrics.
 
@@ -149,33 +158,6 @@ python analyses/calibration/calibration_analysis.py
 - `analyses/calibration/baseline_outputs/*/` - Per-dataset baseline predictions and metrics
 - `analyses/calibration/results/` - Calibration plots and summary statistics
 
-### 2. Metric Problem Analyses 
-
-These scripts demonstrate specific pathologies in common evaluation metrics:
-
-```bash
-cd analyses/metric_problems
-
-# Control bias analysis 
-python control_bias.py
-
-# Signal dilution analysis 
-python signal_dilution.py
-
-# DEG sparsity and coherence
-python effect_sparsity.py
-python deg_coherence.py
-
-# Expression-effect relationship
-python expression_effect.py
-
-# Cell titration experiments
-python cell_titration.py
-
-# Generate main paper plots
-python paper_plots.py
-```
-
 ### 3. Multi-Model Comparison Plots
 
 After running model benchmarks, generate summary visualizations:
@@ -183,22 +165,6 @@ After running model benchmarks, generate summary visualizations:
 ```bash
 python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.csv
 ```
-
-## Analysis Scripts Overview
-
-**Calibration Analysis** (`analyses/calibration/`):
-- Computes positive controls (interpolated duplicate, technical duplicate) 
-- Calculates Dynamic Range Fraction (DRF) for 13 evaluation metrics across 14 datasets
-- Generates calibration heatmaps and per-dataset comparisons
-
-**Metric Problems** (`analyses/metric_problems/`):
-- `control_bias.py` - Demonstrates systematic differences between control and perturbed cells
-- `signal_dilution.py` - Shows how sparse DEG signals are diluted in unweighted metrics
-- `effect_sparsity.py` - Analyzes the relationship between DEG count and metric calibration
-- `deg_coherence.py` - Examines consistency of DEG detection across replicates
-- `cell_titration.py` - Tests metric behavior with varying cell counts
-- `paper_plots.py` - Generates publication-ready figures
-
 
 See the preprint for full details on metric definitions and calibration assessment.
 
