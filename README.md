@@ -166,6 +166,27 @@ After running model benchmarks, generate summary visualizations:
 python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.csv
 ```
 
+### 4. Figure Generation (`analyses/plotting/`)
+
+Generates main and supplementary figures including MSE comparisons, DRF heatmaps, and GSEA self-enrichment analysis:
+
+```bash
+cd analyses/plotting
+
+# Copy calibration results
+cp ../calibration/results/per_perturbation_results.csv .
+
+# Compute MSE comparisons and create GSEA input files
+uv run python compute_replogle_mse.py
+uv run python create_gsea_files.py
+
+# Generate figures (requires R with renv)
+Rscript -e "renv::restore()"
+Rscript -e "rmarkdown::render('cellsimbench_figs_R.rmd')"
+```
+
+See `analyses/plotting/README.md` for detailed documentation.
+
 See the preprint for full details on metric definitions and calibration assessment.
 
 ## Citation

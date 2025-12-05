@@ -29,11 +29,9 @@ library(ggplot2)
 library(cowplot)
 library(ggrepel)
 library(patchwork)
-library(tidyverse)
 library(tidyr)
 library(fgsea)
 library(gridExtra)
-library(ggpubr)
 dir.create("figures")
 ```
 
@@ -364,7 +362,7 @@ metric_labels <- c(
   "pearson_deltapert" = "Pearson \u0394 Pert",
   "pearson_deltapert_degs" = "Pearson \u0394 Pert DEGs",
   "pearson_delta"          = "Pearson \u0394 Pert",
-  "nir"      = "NIR",
+  "nir"                    = "NIR",
   "mse"                    = "MSE",
   "pearson_deltactrl"      = "Pearson \u0394 Ctrl",
   "pearson_deltactrl_degs" = "Pearson \u0394 Ctrl DEGs",
@@ -535,7 +533,7 @@ genes_to_test <- c("AR", "ATF2", "ATF3", "BCLAF1", "BHLHE40", "BRCA1", "CBX3",
 if (!file.exists("gsea_input_for_R/fgsea_all_results.csv")) {
 
   # Load ChEA gene sets
-  chea_lines <- readLines("../../data/cellsimbench_natmeth/ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X.txt")
+  chea_lines <- readLines("ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X.txt")
   
   # Extract TF name and label (CHEA or ENCODE)
   chea_split <- strsplit(chea_lines, "\t")
