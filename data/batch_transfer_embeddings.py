@@ -163,7 +163,7 @@ def main():
     )
     parser.add_argument(
         '--reference',
-        default='data/norman19/norman19_processed_complete.embeddings.save.h5ad',
+        default='data/norman19/norman19_processed_complete.h5ad',
         help='Path to reference adata file with embeddings (default: norman19)'
     )
     parser.add_argument(

@@ -6,7 +6,6 @@ __pycache__
 *.pyw
 *.pyz
 *.gz
-*.csv
 *.pkl
 data/scGPT_CP/
 data/scGPT_human/
@@ -31,7 +30,6 @@ benchmark_results_plots.ipynb
 *.npy
 *.pth
 *.sqlite
-ref
 docker/**/results/**
 *.vcc
 data/gene_embeddings/PRESAGE/
