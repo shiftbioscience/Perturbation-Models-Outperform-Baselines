@@ -55,7 +55,6 @@ DATASETS = [
 ]
 
 
-# Define metrics configuration - INCLUDING CENTROID ACCURACY
 METRICS_CONFIG = {
     'mse': {'higher_better': False, 'perfect': 0.0},
     'wmse': {'higher_better': False, 'perfect': 0.0},
@@ -69,7 +68,7 @@ METRICS_CONFIG = {
     'r2_deltapert_degs': {'higher_better': True, 'perfect': 1.0},
     'weighted_r2_deltactrl': {'higher_better': True, 'perfect': 1.0},
     'weighted_r2_deltapert': {'higher_better': True, 'perfect': 1.0},
-    'centroid_accuracy': {'higher_better': True, 'perfect': 1.0},
+    'nir': {'higher_better': True, 'perfect': 1.0},
 }
 
 print("Calibration analysis initialized")
@@ -1400,15 +1399,13 @@ for drf_type in results_df['drf_type'].unique():
             print(f"    {dataset:15s}: DRF={drf_val:.3f}, DEGs={quality_row['avg_degs']:.0f}, "
                   f"e-dist={quality_row['median_edist']:.1f}")
 
-# Special analysis for centroid accuracy
-print("\n3. CENTROID ACCURACY ANALYSIS:")
+print("\n3. NIR ANALYSIS:")
 print("-" * 40)
 
-# Show centroid accuracy for each DRF type
 for drf_type in results_df['drf_type'].unique():
     print(f"\n  {drf_type}:")
     drf_subset = results_df[results_df['drf_type'] == drf_type]
-    centroid_data = drf_subset[drf_subset['metric'] == 'centroid_accuracy']
+    centroid_data = drf_subset[drf_subset['metric'] == 'nir']
     if not centroid_data.empty:
         print(f"    Mean DRF: {centroid_data['mean_drf'].mean():.3f}")
         print(f"    Range across datasets: {centroid_data['mean_drf'].min():.3f} - {centroid_data['mean_drf'].max():.3f}")

@@ -2,7 +2,7 @@ import scanpy as sc
 import numpy as np
 import pandas as pd
 
-adata = sc.read_h5ad("../../data/cellsimbench_natmeth/replogle22k562gwps_processed_complete.h5ad") 
+adata = sc.read_h5ad("../../data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad") 
 
 # %% MSE comparison plot: Mean Baseline vs Tech. Dup. errors across all perturbations
 deg_gene_dict = adata.uns.get('deg_gene_dict_gt', {})

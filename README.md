@@ -133,7 +133,16 @@ done
 
 ## Reproducing the Analyses
 
-### 1. Calibration Analysis (Figure 1B, Main Results)
+### 1. Perturbation Strength Analysis
+
+Examines how the mean baseline is a better estimator than the technical duplicate baseline when genes are not significantly detected as DEGs. Also shows the effect of sample size on the technical duplicate baseline:
+
+```bash
+# From project root
+uv run python analyses/perturbation_strength/perturbation_strenght.py
+```
+
+### 2. Calibration Analysis (`analyses/calibration/`)
 
 This analysis computes the Dynamic Range Fraction (DRF) and other calibration metrics across all datasets and evaluation metrics.
 
@@ -149,33 +158,6 @@ python analyses/calibration/calibration_analysis.py
 - `analyses/calibration/baseline_outputs/*/` - Per-dataset baseline predictions and metrics
 - `analyses/calibration/results/` - Calibration plots and summary statistics
 
-### 2. Metric Problem Analyses (Figures 2-4)
-
-These scripts demonstrate specific pathologies in common evaluation metrics:
-
-```bash
-cd analyses/metric_problems
-
-# Control bias analysis (Supplementary Figure)
-python control_bias.py
-
-# Signal dilution analysis (Figure 3)
-python signal_dilution.py
-
-# DEG sparsity and coherence (Figure 4)
-python effect_sparsity.py
-python deg_coherence.py
-
-# Expression-effect relationship
-python expression_effect.py
-
-# Cell titration experiments
-python cell_titration.py
-
-# Generate main paper plots
-python paper_plots.py
-```
-
 ### 3. Multi-Model Comparison Plots
 
 After running model benchmarks, generate summary visualizations:
@@ -184,25 +166,26 @@ After running model benchmarks, generate summary visualizations:
 python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.csv
 ```
 
-## Analysis Scripts Overview
+### 4. Figure Generation (`analyses/plotting/`)
 
-**Calibration Analysis** (`analyses/calibration/`):
-- Computes positive controls (interpolated duplicate, technical duplicate) and negative controls (mean baseline, control baseline)
-- Calculates Dynamic Range Fraction (DRF) for 13 evaluation metrics across 14 datasets
-- Generates calibration heatmaps and per-dataset comparisons
+Generates main and supplementary figures including MSE comparisons, DRF heatmaps, and GSEA self-enrichment analysis:
 
-**Metric Problems** (`analyses/metric_problems/`):
-- `control_bias.py` - Demonstrates systematic differences between control and perturbed cells
-- `signal_dilution.py` - Shows how sparse DEG signals are diluted in unweighted metrics
-- `effect_sparsity.py` - Analyzes the relationship between DEG count and metric calibration
-- `deg_coherence.py` - Examines consistency of DEG detection across replicates
-- `cell_titration.py` - Tests metric behavior with varying cell counts
-- `paper_plots.py` - Generates publication-ready figures
+```bash
+cd analyses/plotting
 
-## Key Metrics Evaluated
+# Copy calibration results
+cp ../calibration/results/per_perturbation_results.csv .
 
-- **Poorly calibrated**: MSE, Pearson(Δctrl), R²(Δctrl)
-- **Well calibrated**: WMSE, Weighted R²(Δ), Normalized Inverse Rank (NIR)
+# Compute MSE comparisons and create GSEA input files
+uv run python compute_replogle_mse.py
+uv run python create_gsea_files.py
+
+# Generate figures (requires R with renv)
+Rscript -e "renv::restore()"
+Rscript -e "rmarkdown::render('cellsimbench_figs_R.rmd')"
+```
+
+See `analyses/plotting/README.md` for detailed documentation.
 
 See the preprint for full details on metric definitions and calibration assessment.
 
@@ -213,7 +196,7 @@ If you use this code or data, please cite:
 ```bibtex
 @article{miller2025perturbation,
   title={Deep Learning-Based Genetic Perturbation Models Do Outperform Uninformative Baselines on Well-Calibrated Metrics},
-  author={Miller, Henry E. and Mejia, Gabriel M. and Leblanc, Francis J. A. and Wang, Bo and Swain, Brendan and Camillo, Lucas Paulo de Lima},
+  author={Miller, Henry E. and Mejia, Gabriel M. and Leblanc, Francis J. A., and Swain, Brendan, and Wang, Bo, and Camillo, Lucas Paulo de Lima},
   journal={bioRxiv},
   year={2025},
   doi={10.1101/2025.10.20.683304}

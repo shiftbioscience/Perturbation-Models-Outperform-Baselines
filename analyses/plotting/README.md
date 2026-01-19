@@ -11,25 +11,11 @@ The analysis pipeline consists of three main components:
 
 ## Prerequisites
 
-### Python Dependencies
-- scanpy
-- numpy
-- pandas
-
-### R Dependencies
-- dplyr
-- ggplot2
-- cowplot
-- ggrepel
-- patchwork
-- ggsci
-- tidyverse
-- ggpubr
-- png
-- tidyr
-- fgsea
-- ggridges
-- gridExtra
+### R Environment (tested with R 4.4.1)
+R dependencies are managed via `renv`. Restore the environment from the lockfile:
+```bash
+Rscript -e "renv::restore()"
+```
 
 ### Copy main results in this directory
 ```bash
@@ -61,7 +47,7 @@ The following data files must be present before running the pipeline:
 
 **Run:**
 ```bash
-python compute_replogle_mse.py
+uv run python compute_replogle_mse.py
 ```
 
 **Input:**
@@ -78,7 +64,7 @@ python compute_replogle_mse.py
 
 **Run:**
 ```bash
-python create_gsea_files.py
+uv run python create_gsea_files.py
 ```
 
 **Inputs:**
@@ -97,7 +83,10 @@ python create_gsea_files.py
 
 **Run:**
 ```bash
-# In RStudio, open and knit the file, or from command line:
+# Restore R environment (first time only)
+Rscript -e "renv::restore()"
+
+# Render the R Markdown file
 Rscript -e "rmarkdown::render('cellsimbench_figs_R.rmd')"
 ```
 
@@ -117,7 +106,7 @@ Main figures in `figures/`:
 - `fS7_assembly.png` - Supplementary figure assembly with GSEA results
 
 GSEA results:
-- `gsea_input_for_R/fgsea_all_results.csv` - Complete GSEA results for all TFs
+- `gsea_input_for_R/fgsea_all_results.csv` - Complete GSEA results for all TFs (included in repo for reproducibility)
 - `gsea_input_for_R/fgsea_all_results.rds` - GSEA results in R format
 - `gsea_input_for_R/fgsea_summary.csv` - Self-enrichment summary
 
@@ -142,9 +131,12 @@ The R Markdown file contains the following analyses:
 ## Quick Start
 
 ```bash
+# Restore R environment (first time only)
+Rscript -e "renv::restore()"
+
 # Run Python preprocessing (Steps 1-2)
-python compute_replogle_mse.py
-python create_gsea_files.py
+uv run python compute_replogle_mse.py
+uv run python create_gsea_files.py
 
 # Run R analysis (Step 3)
 Rscript -e "rmarkdown::render('cellsimbench_figs_R.rmd')"

@@ -35,3 +35,9 @@ docker/**/results/**
 data/gene_embeddings/PRESAGE/
 misc.ipynb
 data/gene_embeddings/Geneformer/
+analyses/plotting/depricated/
+analyses/plotting/gsea_input_for_R/*
+!analyses/plotting/gsea_input_for_R/fgsea_all_results.csv
+analyses/plotting/renv/
+analyses/plotting/setup_renv.R
+analyses/plotting/plotting.Rproj

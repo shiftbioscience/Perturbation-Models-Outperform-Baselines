@@ -1,23 +1,27 @@
 # %% Imports
 
 import scanpy as sc
-import anndata as ad
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from tqdm import tqdm
-from scipy.stats import pearsonr
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 
-
+# %% Resolve project root for both script and interactive execution
+try:
+    _script_dir = Path(__file__).resolve().parent
+except NameError:  # __file__ not defined in interactive/notebook environments
+    _script_dir = Path.cwd()
+# Navigate to project root (handles both root and perturbation_strength as cwd)
+PROJECT_ROOT = _script_dir if (_script_dir / "data").exists() else _script_dir.parents[1]
+FIGURES_DIR = PROJECT_ROOT / "analyses/perturbation_strength/figures"
+FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
 # %% Read data
 path_dict = {
-    "replogle22k562gwps": Path("./data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad"), # 256 cells
-    "replogle22rpe1": Path("./data/replogle22rpe1/replogle22rpe1_processed_complete.h5ad"), # 128 cells
-    "replogle22k562": Path("./data/replogle22k562/replogle22k562_processed_complete.h5ad") # 128 cells
+    "replogle22k562gwps": PROJECT_ROOT / "data/replogle22k562gwps/replogle22k562gwps_processed_complete.h5ad", # 256 cells
+    "replogle22rpe1": PROJECT_ROOT / "data/replogle22rpe1/replogle22rpe1_processed_complete.h5ad", # 128 cells
+    "replogle22k562": PROJECT_ROOT / "data/replogle22k562/replogle22k562_processed_complete.h5ad" # 128 cells
 }
 
 dataset_name = "replogle22k562gwps"
@@ -218,88 +222,7 @@ for i, (perturbation, label) in enumerate(zip(selected_perturbations, selected_l
     sns.despine(ax=ax_bottom)
 
 plt.tight_layout()
-plt.show()
-
-# %% MSE comparison plot: Mean Baseline vs Tech. Dup. errors across all perturbations
-
-# Get all perturbation names (excluding controls)
-all_perturbations = [pert for pert in adata.uns['technical_duplicate_first_half_baseline'].index 
-                     if 'control' not in pert.lower()]
-
-# Initialize arrays to store MSE values and DEG counts -- [Coding Agent]
-mse_td_list = []
-mse_mb_list = []
-deg_counts_list = []
-
-# Get mean baseline (same for all perturbations) and convert to numpy once -- [Coding Agent]
-mean_baseline_vals = adata.uns['split_fold_0_mean_baseline'].iloc[0].values
-
-# Get all data at once to avoid repeated .loc calls -- [Coding Agent]
-gt_df = adata.uns['technical_duplicate_first_half_baseline']
-td_df = adata.uns['technical_duplicate_second_half_baseline']
-
-# Compute MSE for each perturbation
-for pert in all_perturbations:
-    # Get data as numpy arrays directly -- [Coding Agent]
-    gt_vals = gt_df.loc[pert].values
-    td_vals = td_df.loc[pert].values
-    
-    # Compute MSE(Tech. Dup., GT) and MSE(Mean Baseline, GT)
-    mse_td = np.mean((td_vals - gt_vals) ** 2)
-    mse_mb = np.mean((mean_baseline_vals - gt_vals) ** 2)
-    
-    mse_td_list.append(mse_td)
-    mse_mb_list.append(mse_mb)
-    
-    # Get DEG count for this perturbation
-    n_degs = len(deg_gene_dict.get(pert, []))
-    deg_counts_list.append(n_degs)
-
-# Convert to arrays
-mse_td_array = np.array(mse_td_list)
-mse_mb_array = np.array(mse_mb_list)
-deg_counts_array = np.array(deg_counts_list)
-
-# Compute log10(#DEGs + 1) for coloring
-log_deg_counts = np.log10(deg_counts_array + 1)
-
-# Create figure
-fig, ax = plt.subplots(figsize=(8, 8))
-
-# Create scatter plot with log axes
-scatter = ax.scatter(mse_td_array, mse_mb_array, 
-                    c=log_deg_counts, cmap='viridis', 
-                    s=50, alpha=0.7, edgecolors='black', linewidths=0.5)
-
-# Add colorbar with controlled size
-cbar = plt.colorbar(scatter, ax=ax, fraction=0.046, pad=0.04)
-cbar.set_label('log10(#DEGs + 1)', fontsize=18)
-
-# Set log scale on both axes
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-# Set square aspect ratio
-ax.set_aspect('equal', adjustable='box')
-
-# Add identity line
-lims = [min(mse_td_array.min(), mse_mb_array.min()), 
-        max(mse_td_array.max(), mse_mb_array.max())]
-ax.plot(lims, lims, 'k--', alpha=0.7, linewidth=2, label='Identity')
-
-# Labels and title
-ax.set_xlabel('MSE(Tech. Dup.)', fontsize=18)
-ax.set_ylabel('MSE(Mean Baseline)', fontsize=18)
-
-# Add legend
-ax.legend(fontsize=16)
-
-# Grid and styling
-ax.grid(True, alpha=0.3, which='both')
-ax.set_axisbelow(True)
-sns.despine(ax=ax)
-
-plt.tight_layout()
+fig.savefig(FIGURES_DIR / "sup_fig_error_analysis.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 # %% Cell titration experiment for 3 selected perturbations
@@ -450,6 +373,7 @@ for i, (perturbation, label) in enumerate(zip(selected_perturbations, selected_l
         ax.set_title(f'{perturbation}\nError', fontsize=18)
 
 plt.tight_layout()
+fig.savefig(FIGURES_DIR / "sup_fig_sample_size_effect.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 # %% Wide p-value plot with shading for ~30 DEG perturbation
@@ -497,172 +421,8 @@ ax.tick_params(axis='x', labelsize=14)
 ax.tick_params(axis='y', labelsize=14)
 
 plt.tight_layout()
+fig.savefig(FIGURES_DIR / "sup_fig_theoretical_model.png", dpi=300, bbox_inches='tight')
 plt.show()
 
-# %% Histogram distributions for most and least significant genes
-
-def plot_gene_histogram(gene_name, all_pert_cells, pert_cells, gt_cells, td_cells, adata, ax=None):
-    """
-    Plot overlaid histogram distributions for a single gene.
-    
-    Parameters:
-    -----------
-    gene_name : str
-        Name of the gene to plot
-    all_pert_cells : AnnData
-        All perturbed cells (across all perturbations)
-    pert_cells : AnnData
-        Cells from specific perturbation
-    gt_cells : AnnData
-        Ground truth half of perturbation cells
-    td_cells : AnnData
-        Technical duplicate half of perturbation cells
-    adata : AnnData
-        Full AnnData object
-    ax : matplotlib axis, optional
-        Axis to plot on. If None, creates new figure
-        
-    Returns:
-    --------
-    ax : matplotlib axis
-        The axis with the plot
-    """
-    # Get gene index
-    gene_idx = adata.var_names.get_loc(gene_name)
-    
-    # Extract expression values
-    all_expr = np.asarray(all_pert_cells.X[:, gene_idx].toarray()).flatten() if hasattr(all_pert_cells.X, 'toarray') else np.asarray(all_pert_cells.X[:, gene_idx]).flatten()
-    gt_expr = np.asarray(gt_cells.X[:, gene_idx].toarray()).flatten() if hasattr(gt_cells.X, 'toarray') else np.asarray(gt_cells.X[:, gene_idx]).flatten()
-    td_expr = np.asarray(td_cells.X[:, gene_idx].toarray()).flatten() if hasattr(td_cells.X, 'toarray') else np.asarray(td_cells.X[:, gene_idx]).flatten()
-    
-    # Create axis if not provided
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(8, 5))
-    
-    # Plot histograms
-    ax.hist(all_expr, bins=100, alpha=0.4, color='gray', label='All perturbed cells', edgecolor='black', linewidth=0.5, density=True)
-    ax.hist(gt_expr, bins=20, alpha=0.5, color='darkblue', label='Ground truth', edgecolor='black', linewidth=0.7, density=True)
-    ax.hist(td_expr, bins=20, alpha=0.5, color='green', label='Technical duplicate', edgecolor='black', linewidth=0.7, density=True)
-    
-    # Add vertical lines for means
-    ax.axvline(all_expr.mean(), color='gray', linestyle='--', linewidth=2, alpha=0.8)
-    ax.axvline(gt_expr.mean(), color='darkblue', linestyle='--', linewidth=2, alpha=0.8)
-    ax.axvline(td_expr.mean(), color='green', linestyle='--', linewidth=2, alpha=0.8)
-    
-    # Styling
-    ax.set_xlabel('Expression', fontsize=14)
-    ax.set_ylabel('Density', fontsize=14)
-    ax.set_title(gene_name, fontsize=14, fontweight='bold')
-    ax.legend(fontsize=10)
-    sns.despine(ax=ax)
-    
-    return ax
-
-
-# Get cells from this specific perturbation first
-pert_mask = adata.obs['condition'] == target_deg_pert.split('_')[1]
-pert_cells = adata[pert_mask]
-
-# Compute mean expression for all genes in this perturbation
-mean_expr_pert = np.asarray(pert_cells.X.mean(axis=0)).flatten()
-gene_to_expr_pert = pd.Series(mean_expr_pert, index=adata.var_names)
-
-# Compute mean expression across ALL perturbed cells
-control_mask = adata.obs['condition'].str.contains('control', case=False, na=False)
-all_pert_cells = adata[~control_mask]
-mean_expr_all = np.asarray(all_pert_cells.X.mean(axis=0)).flatten()
-gene_to_expr_all = pd.Series(mean_expr_all, index=adata.var_names)
-
-# Compute difference: how much this perturbation differs from overall mean
-expr_diff = gene_to_expr_pert - gene_to_expr_all
-
-# Get the gene names and p-values specifically for this perturbation from uns
-pvals_this_pert = adata.uns['pvals_adj_df_dict_gt'][target_deg_pert]
-gene_names_this_pert = adata.uns['names_df_dict_gt'][target_deg_pert]
-
-# Create unified DataFrame with all gene information
-deg_df = pd.DataFrame({
-    'gene': gene_names_this_pert,
-    'adjusted_pval': pvals_this_pert,
-})
-
-# Add expression information by matching gene names
-deg_df['mean_expr_pert'] = deg_df['gene'].map(gene_to_expr_pert)
-deg_df['mean_expr_all'] = deg_df['gene'].map(gene_to_expr_all)
-deg_df['expr_diff'] = deg_df['gene'].map(expr_diff)
-
-# Set gene as index for easier access
-deg_df = deg_df.set_index('gene')
-
-# Sort by adjusted p-value
-deg_df = deg_df.sort_values('adjusted_pval')
-
-print(f"Total genes in DEG test: {len(deg_df)}")
-print(f"\nDEG DataFrame preview (sorted by adjusted p-value):")
-print(deg_df.head())
-
-# Filter to DEGs (adjusted p-value < 0.05)
-deg_genes_df = deg_df[deg_df['adjusted_pval'] < 0.05]
-print(f"\nNumber of DEGs (p < 0.05): {len(deg_genes_df)}")
-
-# Find DEG with biggest absolute difference from overall mean (among highly expressed)
-deg_high_expr = deg_genes_df[deg_genes_df['mean_expr_pert'] > 1.0]
-most_different_deg = deg_high_expr['expr_diff'].abs().idxmax()
-
-# Filter to non-DEGs (adjusted p-value > 0.95)
-non_deg_genes_df = deg_df[deg_df['adjusted_pval'] > 0.95]
-print(f"Number of non-DEGs (p > 0.95): {len(non_deg_genes_df)}")
-
-# Find non-DEG with smallest difference (among highly expressed)
-non_deg_high_expr = non_deg_genes_df[non_deg_genes_df['mean_expr_pert'] > 1.0]
-most_similar_non_deg = non_deg_high_expr['expr_diff'].abs().idxmin()
-
-print(f"\nDEG with biggest shift from overall: {most_different_deg}")
-print(deg_df.loc[most_different_deg])
-print(f"\nNon-DEG with smallest shift from overall: {most_similar_non_deg}")
-print(deg_df.loc[most_similar_non_deg])
-
-# Get all DEG names
-all_deg_names = deg_genes_df.index.tolist()
-print(f"\nPlotting {len(all_deg_names)} DEGs...")
-
-# Randomly split this perturbation's cells into GT and TD halves
-np.random.seed(42)
-n_pert_cells = pert_cells.n_obs
-gt_indices = np.random.choice(n_pert_cells, size=n_pert_cells//2, replace=False)
-td_indices = np.setdiff1d(np.arange(n_pert_cells), gt_indices)
-
-gt_cells = pert_cells[gt_indices]
-td_cells = pert_cells[td_indices]
-
-# Plot each DEG individually
-for gene_name in all_deg_names:
-    fig, ax = plt.subplots(figsize=(8, 5))
-    plot_gene_histogram(gene_name, all_pert_cells, pert_cells, gt_cells, td_cells, adata, ax=ax)
-    plt.tight_layout()
-    plt.show()
-
-# %% Plot 30 random non-significant genes
-
-# Filter to highly non-significant genes (adjusted p-value > 0.99)
-highly_non_sig_genes_df = deg_df[deg_df['adjusted_pval'] > 0.99]
-print(f"Number of highly non-significant genes (p > 0.99): {len(highly_non_sig_genes_df)}")
-
-# Randomly sample 30 genes
-np.random.seed(42)
-if len(highly_non_sig_genes_df) >= 30:
-    random_non_sig_genes = np.random.choice(highly_non_sig_genes_df.index, size=30, replace=False)
-else:
-    random_non_sig_genes = highly_non_sig_genes_df.index
-    print(f"Only {len(random_non_sig_genes)} genes available, plotting all of them")
-
-print(f"Plotting {len(random_non_sig_genes)} random non-significant genes...")
-
-# Plot each non-significant gene individually
-for gene_name in random_non_sig_genes:
-    fig, ax = plt.subplots(figsize=(8, 5))
-    plot_gene_histogram(gene_name, all_pert_cells, pert_cells, gt_cells, td_cells, adata, ax=ax)
-    plt.tight_layout()
-    plt.show()
-
 # %% 
+
