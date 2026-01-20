@@ -28,10 +28,11 @@ Get up and running with pre-built Docker images and pre-processed datasets.
 - Docker installed and running
 - AWS CLI installed (for downloading datasets)
 - OpenAI API key (only if running scLambda)
+- *Optional:* A conda environment with R (see `analyses/plotting/README.md`). Only for reproducing R-based plots.
 
 **Recommended Hardware (for full reproduction):**
 - 5 GPUs with at least 24GB VRAM each
-- 384GB RAM
+- 384GB CPU RAM
 - 64 CPU cores
 - 2TB storage
 
@@ -46,7 +47,7 @@ source .venv/bin/activate
 ./scripts/pull_all_models.sh
 
 # 3. Build PRESAGE manually (not distributed due to license restrictions)
-bash docker/presage/build.sh
+./docker/presage/build.sh
 
 # 4. Download pre-processed datasets
 ./scripts/pull_all_datasets.sh
@@ -55,14 +56,17 @@ bash docker/presage/build.sh
 echo "OPENAI_API_KEY=<your_api_key>" > .env
 
 # 6. Run a benchmark
-uv run cellsimbench benchmark model=gears dataset=norman19
+cellsimbench train model=fmlp_esm2 dataset=norman19
+cellsimbench benchmark model=fmlp_esm2 dataset=norman19
 ```
 
 ---
 
 ## Running Model Benchmarks
 
-After setup, train and evaluate models on any of the 14 datasets:
+After setup, train and evaluate models on any of the 14 datasets. 
+
+**NOTE:** All training and benchmarking runs will launch multiple jobs (5 for single-gene prediction datasets, and 2 for combo-gene prediction datasets). Jobs will be automatically scheduled using multiple GPUs when available. Monitor and increase compute resources if necessary.
 
 ```bash
 # Train a model on a dataset
@@ -72,7 +76,7 @@ uv run cellsimbench train model=fmlp_esm2 dataset=norman19
 uv run cellsimbench benchmark model=fmlp_esm2 dataset=norman19
 
 # Train and benchmark across multiple datasets
-for dataset in adamson16 norman19 replogle22k562 replogle22rpe1; do
+for dataset in norman19 wessels23; do
     uv run cellsimbench train model=fmlp_esm2 dataset=$dataset
     uv run cellsimbench benchmark model=fmlp_esm2 dataset=$dataset
 done
@@ -91,7 +95,7 @@ done
 Examines how the mean baseline is a better estimator than the technical duplicate baseline when genes are not significantly detected as DEGs. Also shows the effect of sample size on the technical duplicate baseline:
 
 ```bash
-uv run python analyses/perturbation_strength/perturbation_strenght.py
+uv run python analyses/perturbation_strength/perturbation_strength.py
 ```
 
 ### 2. Calibration Analysis
@@ -103,7 +107,7 @@ Computes the Dynamic Range Fraction (DRF) and other calibration metrics across a
 bash analyses/calibration/run_all_dataset_baselines.sh
 
 # Generate calibration plots and statistics
-python analyses/calibration/calibration_analysis.py
+uv run python analyses/calibration/calibration_analysis.py
 ```
 
 **Outputs:**
@@ -112,7 +116,7 @@ python analyses/calibration/calibration_analysis.py
 
 ### 3. Multi-Model Comparison Plots
 
-After running model benchmarks, generate summary visualizations:
+After running model benchmarks (`cellsimbench train ...` and `cellsimbench benchmark...`), generate nice summary visualizations:
 
 ```bash
 python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.csv
