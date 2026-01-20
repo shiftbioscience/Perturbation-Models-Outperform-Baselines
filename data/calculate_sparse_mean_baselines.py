@@ -191,7 +191,7 @@ def process_all_datasets(force_recompute=False, num_workers=None):
     SEEDS = [0, 1, 2]
     
     # Load all dataset configs
-    config_dir = "src/cellsimbench/configs/dataset"
+    config_dir = "cellsimbench/configs/dataset"
     configs = load_dataset_configs(config_dir)
 
     print(f"Found {len(configs)} dataset configurations")

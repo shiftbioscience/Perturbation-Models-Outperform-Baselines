@@ -1,4 +1,0 @@
-# @package model
-name: baselines
-type: baselines_only
-description: "Run only baseline models for this dataset" 

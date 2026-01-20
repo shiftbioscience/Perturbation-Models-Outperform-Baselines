@@ -52,7 +52,6 @@ def format_model_name(model_name: str) -> str:
         'dataset_mean': 'Dataset Mean',
         'control_mean': 'Control Mean',
         'technical_duplicate': 'Technical Duplicate',
-        'sparse_mean': 'Sparse Mean',
         'interpolated_duplicate': 'Interpolated Duplicate',
         'additive': 'Additive',
         'linear': 'Linear',
@@ -76,9 +75,6 @@ def load_and_process_data(csv_path: Path, exclude_baselines: bool = False) -> pd
     """Load detailed metrics CSV and calculate summary statistics."""
     df = pd.read_csv(csv_path)
     
-    # Always exclude sparse_mean
-    df = df[df['model'] != 'sparse_mean']
-    
     # Optionally exclude baseline models to focus on trained models
     if exclude_baselines:
         baseline_keywords = ['control_mean', 'technical_duplicate',
@@ -94,9 +90,6 @@ def load_and_process_data(csv_path: Path, exclude_baselines: bool = False) -> pd
 
 def create_mean_heatmap(summary_df: pd.DataFrame, output_path: Path, figsize=(16, 10)):
     """Create heatmap of model × metric with annotated mean values."""
-    # Remove sparse_mean
-    summary_df = summary_df[summary_df['model'] != 'sparse_mean']
-    
     # Pivot to get model × metric matrix
     pivot_df = summary_df.pivot(index='model', columns='metric', values='mean')
     
@@ -168,7 +161,7 @@ def create_mean_heatmap(summary_df: pd.DataFrame, output_path: Path, figsize=(16
     
     # Style y-axis labels: italicize and color baselines differently
     # Use formatted baseline names since we renamed the indices
-    formatted_baseline_names = ['Control Mean', 'Technical Duplicate', 'Sparse Mean',
+    formatted_baseline_names = ['Control Mean', 'Technical Duplicate',
                                 'Interpolated Duplicate', 'Additive', 'Dataset Mean',
                                 'Linear', 'Baselines', 'Ground Truth']
     
@@ -192,9 +185,6 @@ def create_mean_heatmap(summary_df: pd.DataFrame, output_path: Path, figsize=(16
 
 def create_zscore_heatmap(summary_df: pd.DataFrame, output_path: Path, figsize=(16, 10)):
     """Create heatmap showing performance relative to dataset_mean baseline."""
-    # Remove sparse_mean
-    summary_df = summary_df[summary_df['model'] != 'sparse_mean']
-    
     # Pivot to get model × metric matrix
     pivot_df = summary_df.pivot(index='model', columns='metric', values='mean')
     
@@ -305,7 +295,7 @@ def create_zscore_heatmap(summary_df: pd.DataFrame, output_path: Path, figsize=(
     
     # Style y-axis labels: italicize and color baselines differently
     # Use formatted baseline names since we renamed the indices
-    formatted_baseline_names = ['Control Mean', 'Technical Duplicate', 'Sparse Mean',
+    formatted_baseline_names = ['Control Mean', 'Technical Duplicate',
                                 'Interpolated Duplicate', 'Additive', 'Dataset Mean',
                                 'Linear', 'Baselines', 'Ground Truth']
     
@@ -399,9 +389,6 @@ def create_statistical_comparison_heatmap(csv_path: Path, output_path: Path, dat
     """Create heatmap showing statistical test results vs. appropriate baseline."""
     # Load full data (not summary)
     df = pd.read_csv(csv_path)
-    
-    # Remove sparse_mean
-    df = df[df['model'] != 'sparse_mean']
     
     # Get unique models and metrics
     models = df['model'].unique()
@@ -581,7 +568,7 @@ def create_statistical_comparison_heatmap(csv_path: Path, output_path: Path, dat
     
     # Style y-axis labels: italicize and color baselines differently
     # Use formatted baseline names since we renamed the indices
-    formatted_baseline_names = ['Control Mean', 'Technical Duplicate', 'Sparse Mean',
+    formatted_baseline_names = ['Control Mean', 'Technical Duplicate',
                                 'Interpolated Duplicate', 'Additive', 'Dataset Mean',
                                 'Linear', 'Baselines', 'Ground Truth']
     
@@ -608,9 +595,6 @@ def create_stripplot_for_metric(args):
     df, metric, output_dir, dataset_name, use_log_scale = args
     
     metric_df = df[df['metric'] == metric].copy()
-    
-    # Always exclude sparse_mean
-    metric_df = metric_df[metric_df['model'] != 'sparse_mean']
     
     if metric_df.empty:
         return None
@@ -689,7 +673,7 @@ def create_stripplot_for_metric(args):
                           for model, (t, p) in test_results.items()}
     
     # Identify baselines
-    baseline_keywords = ['control_mean', 'technical_duplicate', 'sparse_mean', 
+    baseline_keywords = ['control_mean', 'technical_duplicate', 
                         'interpolated_duplicate', 'additive', 'dataset_mean', 
                         'linear', 'baselines', 'ground_truth']
     
@@ -892,9 +876,6 @@ def create_forest_plot_for_metric(args):
     
     metric_df = df[df['metric'] == metric].copy()
     
-    # Always exclude sparse_mean
-    metric_df = metric_df[metric_df['model'] != 'sparse_mean']
-    
     if metric_df.empty:
         return None
     
@@ -1012,7 +993,7 @@ def create_forest_plot_for_metric(args):
     fig, ax = plt.subplots(figsize=(8, max(7, len(sorted_models) * 0.3)))
     
     # Identify baselines
-    baseline_keywords = ['control_mean', 'technical_duplicate', 'sparse_mean', 
+    baseline_keywords = ['control_mean', 'technical_duplicate', 
                         'interpolated_duplicate', 'additive', 'dataset_mean', 
                         'linear', 'baselines', 'ground_truth']
     
@@ -1397,9 +1378,6 @@ def create_aux_plot_expanded(df: pd.DataFrame, metric: str, models_to_plot: list
     
     metric_df = df[df['metric'] == metric].copy()
     
-    # Always exclude sparse_mean
-    metric_df = metric_df[metric_df['model'] != 'sparse_mean']
-    
     if metric_df.empty:
         return
     
@@ -1752,9 +1730,6 @@ def create_latex_tables(csv_path: Path, mean_all_path: Path, mean_nodeg_path: Pa
                         ttest_all_path: Path, ttest_nodeg_path: Path, dataset_name: str):
     """Create LaTeX tables: two versions each for means and t-tests (with/without DEG metrics)."""
     df = pd.read_csv(csv_path)
-    
-    # Remove sparse_mean
-    df = df[df['model'] != 'sparse_mean']
     
     # Get models and metrics
     all_models = [m for m in df['model'].unique() if m != 'ground_truth']

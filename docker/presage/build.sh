@@ -38,13 +38,13 @@ fi
 # Change to the script directory
 cd "$SCRIPT_DIR"
 
-# Check if PRESAGE reference exists
-if [ ! -d "ref/PRESAGE" ]; then
-    echo "Error: PRESAGE reference not found at $SCRIPT_DIR/ref/PRESAGE"
-    echo "Please clone PRESAGE repository first:"
-    echo "cd $SCRIPT_DIR && git clone https://github.com/genentech/PRESAGE.git ref/PRESAGE"
-    exit 1
-fi
+# # Check if PRESAGE reference exists
+# if [ ! -d "ref/PRESAGE" ]; then
+#     echo "Error: PRESAGE reference not found at $SCRIPT_DIR/ref/PRESAGE"
+#     echo "Please clone PRESAGE repository first:"
+#     echo "cd $SCRIPT_DIR && git clone https://github.com/genentech/PRESAGE.git ref/PRESAGE"
+#     exit 1
+# fi
 
 # Build the Docker image - use project root as context
 PROJECT_ROOT="$SCRIPT_DIR/../.."

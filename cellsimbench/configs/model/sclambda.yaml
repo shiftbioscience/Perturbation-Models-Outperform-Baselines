@@ -1,0 +1,43 @@
+# @package model
+name: sclambda
+type: docker
+description: "scLambda perturbation prediction model with LLM gene embeddings"
+
+docker:
+  image: "cellsimbench/sclambda:latest"
+  memory: "max"
+  cpus: "max"
+  gpu: true
+
+# Model hyperparameters
+hyperparameters:
+  # scLambda architecture parameters
+  latent_dim: 30
+  hidden_dim: 512
+  training_epochs: 200
+  batch_size: 500
+  test_batch_size: 500
+  lambda_MI: 200
+  eps: 0.001
+  val_every: 10
+  use_delta: true
+  delta_type: "ctrl_mean"
+  # Gene embedding parameters
+  embedding_model: "text-embedding-3-large"  # OpenAI embedding model
+  embedding_dimensions: 3072  # 3072, 1024, or 256 for text-embedding-3-large
+  seed: 42
+  use_covariates: false
+  covariate_embedding_dim: 16
+
+  # Model configuration
+  multi_gene: true
+  
+  # Training parameters
+  lr: 0.0005
+  weight_decay: 0.0001
+  
+  gene_embedding_config:
+    cache_dir: "/model_output/embeddings_cache"
+    openai_api_key_env: "OPENAI_API_KEY"
+    env_file_path: ".env"  # Path to .env file containing OpenAI API key
+    batch_size: 100

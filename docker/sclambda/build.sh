@@ -7,12 +7,12 @@ set -e
 echo "Building scLambda Docker container..."
 
 # Check if .env file exists
-if [ -f "docker/sclambda/.env" ]; then
+if [ -f ".env" ]; then
     echo "Found .env file - environment variables will be available for container runs"
     echo "Make sure your .env file contains: OPENAI_API_KEY=your-key-here"
 else
     echo "WARNING: No .env file found. Create one with your OpenAI API key:"
-    echo "  echo 'OPENAI_API_KEY=your-key-here' > docker/sclambda/.env"
+    echo "  echo 'OPENAI_API_KEY=your-key-here' > .env"
 fi
 
 # Build the container (assuming we're at project root)

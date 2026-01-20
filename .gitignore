@@ -5,8 +5,8 @@ __pycache__
 *.pyd
 *.pyw
 *.pyz
+.env
 *.gz
-*.pkl
 data/scGPT_CP/
 data/scGPT_human/
 data/save
@@ -17,11 +17,9 @@ outputs
 *.json
 *.zip
 *.fa
-.env
 *.xlsx
 *.tsv
 *.pt
-*.pkl
 *.ckpt
 *.egg-info
 benchmark_results_plots.ipynb

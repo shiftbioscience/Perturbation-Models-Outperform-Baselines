@@ -192,7 +192,7 @@ def main():
     print("=" * 80)
     
     # Load all dataset configs
-    config_dir = Path('src/cellsimbench/configs/dataset')
+    config_dir = Path('cellsimbench/configs/dataset')
     yaml_files = list(config_dir.glob('*.yaml'))
     
     datasets_to_process = []

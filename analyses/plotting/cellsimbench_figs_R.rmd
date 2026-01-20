@@ -619,7 +619,7 @@ test <- metrics %>%
 
 test_m <- merge(test, self_enrich_summary, by.x = "perturbation", by.y = "query_gene")
 test_m_wide <- test_m %>%
-  select(-c("drf", "drf_mean", "drf_sparsemean", "drf_ctrl")) %>% 
+  select(-c("drf", "drf_mean", "drf_ctrl")) %>% 
   pivot_wider(names_from = "metric", values_from = "drf_interpolated") %>% 
   mutate(delta_drf = wmse - mse)
 

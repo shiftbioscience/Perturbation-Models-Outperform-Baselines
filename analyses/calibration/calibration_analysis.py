@@ -91,7 +91,7 @@ final_results_exist = (
     (RESULTS_DIR / 'dataset_quality.csv').exists()
 )
 
-if final_results_exist and not args.force and False:
+if final_results_exist and not args.force:
     print("\nFinal results already exist. Loading from disk...")
     per_pert_df = pd.read_csv(RESULTS_DIR / 'per_perturbation_results.csv')
     # Load the FULL results with all three DRF types
@@ -108,7 +108,6 @@ if final_results_exist and not args.force and False:
     # Reconstruct per_pert_drf dictionaries for all three DRF versions
     per_pert_drf = {}
     per_pert_drf_mean = {}
-    per_pert_drf_sparsemean = {}
     per_pert_drf_ctrl = {}
     
     for _, row in per_pert_df.iterrows():
@@ -117,7 +116,7 @@ if final_results_exist and not args.force and False:
         pert = row['perturbation']
         
         # Initialize nested dicts if needed
-        for drf_dict in [per_pert_drf, per_pert_drf_mean, per_pert_drf_sparsemean, per_pert_drf_ctrl]:
+        for drf_dict in [per_pert_drf, per_pert_drf_mean, per_pert_drf_ctrl]:
             if dataset not in drf_dict:
                 drf_dict[dataset] = {}
             if metric not in drf_dict[dataset]:
@@ -133,9 +132,6 @@ if final_results_exist and not args.force and False:
         elif 'drf' in row:
             per_pert_drf[dataset][metric][pert_key] = row['drf']
             per_pert_drf_mean[dataset][metric][pert_key] = row['drf']
-        
-        if 'drf_sparsemean' in row and not pd.isna(row['drf_sparsemean']):
-            per_pert_drf_sparsemean[dataset][metric][pert_key] = row['drf_sparsemean']
         
         if 'drf_ctrl' in row and not pd.isna(row['drf_ctrl']):
             per_pert_drf_ctrl[dataset][metric][pert_key] = row['drf_ctrl']
@@ -234,8 +230,6 @@ if not SKIP_COMPUTATION:
             # Map CSV baseline names to expected names
             if baseline_name == 'dataset_mean':
                 mapped_name = 'mean'
-            elif baseline_name == 'sparse_mean':
-                mapped_name = 'sparse_mean'
             elif baseline_name == 'control_mean':
                 mapped_name = 'control'
             elif baseline_name == 'technical_duplicate':
@@ -268,7 +262,7 @@ if not SKIP_COMPUTATION:
                 dataset_metrics[dataset_name][mapped_name][metric_name] = pert_dict
         
         # Load dataset config for later use
-        config_path = Path(f"src/cellsimbench/configs/dataset/{dataset_name}.yaml")
+        config_path = Path(f"cellsimbench/configs/dataset/{dataset_name}.yaml")
         if config_path.exists():
             with open(config_path, 'r') as f:
                 import yaml
@@ -295,7 +289,7 @@ if not SKIP_COMPUTATION:
                         metrics_to_filter.append(metric_name)
                         
                         # Set all values to NaN for this metric across all baselines
-                        for baseline_name in ['mean', 'sparse_mean', 'control', 'tech_dup', 'interp_dup']:
+                        for baseline_name in ['mean', 'control', 'tech_dup', 'interp_dup']:
                             if baseline_name in dataset_metrics[dataset_name]:
                                 if metric_name in dataset_metrics[dataset_name][baseline_name]:
                                     for pert_key in dataset_metrics[dataset_name][baseline_name][metric_name].keys():
@@ -339,7 +333,7 @@ if not SKIP_COMPUTATION:
         
         # Load dataset config if not already loaded
         if dataset_name not in dataset_configs:
-            config_path = Path(f"src/cellsimbench/configs/dataset/{dataset_name}.yaml")
+            config_path = Path(f"cellsimbench/configs/dataset/{dataset_name}.yaml")
             with open(config_path, 'r') as f:
                 import yaml
                 dataset_config = yaml.safe_load(f)
@@ -493,7 +487,6 @@ if not SKIP_COMPUTATION:
     per_pert_drf = {}  # Store per-perturbation DRFs for analysis
     # Store separate DRF versions
     per_pert_drf_mean = {}
-    per_pert_drf_sparsemean = {}
     per_pert_drf_ctrl = {}
     per_pert_drf_interpolated = {}
     
@@ -514,14 +507,12 @@ if not SKIP_COMPUTATION:
         
         # Get all baseline metrics
         mean_metrics = baseline_metrics['mean']
-        sparse_mean_metrics = baseline_metrics['sparse_mean']
         control_metrics = baseline_metrics['control']
         techdup_metrics = baseline_metrics['tech_dup']
         interp_dup_metrics = baseline_metrics['interp_dup']
         
         # Store per-perturbation DRFs for this dataset
         per_pert_drf_mean[dataset_name] = {}
-        per_pert_drf_sparsemean[dataset_name] = {}
         per_pert_drf_ctrl[dataset_name] = {}
         per_pert_drf_interpolated[dataset_name] = {}
 
@@ -529,7 +520,6 @@ if not SKIP_COMPUTATION:
         for metric_name, config in METRICS_CONFIG.items():
             # Calculate DRF for EACH perturbation individually
             pert_drfs_mean = {}
-            pert_drfs_sparsemean = {}
             pert_drfs_ctrl = {}
             pert_drfs_interpolated = {}
             
@@ -582,12 +572,7 @@ if not SKIP_COMPUTATION:
                         if not np.isnan(drf_mean):
                             pert_drfs_mean[pert_key] = drf_mean
                     
-                    # Calculate DRF with respect to sparse mean
-                    if metric_name in sparse_mean_metrics and pert_key in sparse_mean_metrics[metric_name]:
-                        drf_sparsemean = calculate_drf(sparse_mean_metrics[metric_name][pert_key], techdup_perf, config)
-                        if not np.isnan(drf_sparsemean):
-                            pert_drfs_sparsemean[pert_key] = drf_sparsemean
-                    
+
                     # Calculate DRF with respect to control
                     if metric_name in control_metrics and pert_key in control_metrics[metric_name]:
                         drf_ctrl = calculate_drf(control_metrics[metric_name][pert_key], techdup_perf, config)
@@ -618,7 +603,6 @@ if not SKIP_COMPUTATION:
             
             # Store per-perturbation DRFs for all four versions
             per_pert_drf_mean[dataset_name][metric_name] = pert_drfs_mean
-            per_pert_drf_sparsemean[dataset_name][metric_name] = pert_drfs_sparsemean
             per_pert_drf_ctrl[dataset_name][metric_name] = pert_drfs_ctrl
             per_pert_drf_interpolated[dataset_name][metric_name] = pert_drfs_interpolated
             
@@ -626,7 +610,6 @@ if not SKIP_COMPUTATION:
             # Calculate overall statistics for reporting (for all four versions)
             versions = [
                 ('drf_mean', pert_drfs_mean, mean_metrics),
-                ('drf_sparsemean', pert_drfs_sparsemean, sparse_mean_metrics),
                 ('drf_ctrl', pert_drfs_ctrl, control_metrics),
                 ('drf_interpolated', pert_drfs_interpolated, interp_dup_metrics)
             ]
@@ -678,15 +661,13 @@ if not SKIP_COMPUTATION:
 
     
     drf_df = pd.DataFrame(drf_results)
-    print("\nDRF calculation complete (4 versions: drf_mean, drf_sparsemean, drf_ctrl, drf_interpolated)!")
+    print("\nDRF calculation complete (4 versions: drf_mean, drf_ctrl, drf_interpolated)!")
 else:
     print("Skipping DRF calculation - already reconstructed from existing results")
     # drf_df will be loaded as results_df from CSV, no need to recalculate
     # Initialize empty DRF dictionaries if not already set
     if 'per_pert_drf_mean' not in locals():
         per_pert_drf_mean = per_pert_drf
-    if 'per_pert_drf_sparsemean' not in locals():
-        per_pert_drf_sparsemean = {}
     if 'per_pert_drf_ctrl' not in locals():
         per_pert_drf_ctrl = {}
     if 'per_pert_drf_interpolated' not in locals():
@@ -749,14 +730,6 @@ if not SKIP_COMPUTATION:
                 row['drf'] = drf  # Legacy compatibility
                 row['drf_mean'] = drf
                 
-                # Add drf_sparsemean if available
-                if (dataset_name in per_pert_drf_sparsemean and 
-                    metric_name in per_pert_drf_sparsemean[dataset_name] and
-                    pert_key in per_pert_drf_sparsemean[dataset_name][metric_name]):
-                    row['drf_sparsemean'] = per_pert_drf_sparsemean[dataset_name][metric_name][pert_key]
-                else:
-                    row['drf_sparsemean'] = np.nan
-                
                 # Add drf_ctrl if available
                 if (dataset_name in per_pert_drf_ctrl and 
                     metric_name in per_pert_drf_ctrl[dataset_name] and
@@ -782,11 +755,9 @@ if not SKIP_COMPUTATION:
     # - We NEVER mix the four DRF types together - they are always kept completely separate
     # - Each DRF type represents comparison to a different baseline or approach:
     #   * drf_mean: tech_dup vs dataset_mean
-    #   * drf_sparsemean: tech_dup vs sparse_mean  
     #   * drf_ctrl: tech_dup vs control_mean
     #   * drf_interpolated: interpolated_dup vs dataset_mean
     results_df_mean = drf_df[drf_df['drf_type'] == 'drf_mean'].copy()
-    results_df_sparsemean = drf_df[drf_df['drf_type'] == 'drf_sparsemean'].copy()
     results_df_ctrl = drf_df[drf_df['drf_type'] == 'drf_ctrl'].copy()
     results_df_interpolated = drf_df[drf_df['drf_type'] == 'drf_interpolated'].copy()
     
@@ -797,7 +768,6 @@ if not SKIP_COMPUTATION:
     results_df = results_df.merge(quality_df, on='dataset', how='left')
     # Also keep the separate versions for individual saving
     results_df_mean = results_df_mean.merge(quality_df, on='dataset', how='left')
-    results_df_sparsemean = results_df_sparsemean.merge(quality_df, on='dataset', how='left')
     results_df_ctrl = results_df_ctrl.merge(quality_df, on='dataset', how='left')
     results_df_interpolated = results_df_interpolated.merge(quality_df, on='dataset', how='left')
 
@@ -806,7 +776,6 @@ if not SKIP_COMPUTATION:
     
     # Save separate files for each DRF type (aggregated by dataset-metric)
     results_df_mean.to_csv(RESULTS_DIR / 'calibration_results_drf_mean.csv', index=False)
-    results_df_sparsemean.to_csv(RESULTS_DIR / 'calibration_results_drf_sparsemean.csv', index=False)
     results_df_ctrl.to_csv(RESULTS_DIR / 'calibration_results_drf_ctrl.csv', index=False)
     results_df_interpolated.to_csv(RESULTS_DIR / 'calibration_results_drf_interpolated.csv', index=False)
     
@@ -819,7 +788,6 @@ if not SKIP_COMPUTATION:
     print(f"  - Per-perturbation results: {len(per_pert_df)} rows (all 4 DRF types as columns)")
     print(f"  - Aggregated results by DRF type:")
     print(f"    - calibration_results_drf_mean.csv: {len(results_df_mean)} rows")
-    print(f"    - calibration_results_drf_sparsemean.csv: {len(results_df_sparsemean)} rows")
     print(f"    - calibration_results_drf_ctrl.csv: {len(results_df_ctrl)} rows")
     print(f"    - calibration_results_drf_interpolated.csv: {len(results_df_interpolated)} rows")
     print(f"  - All DRF versions combined: drf_all_versions.csv with {len(drf_df)} rows")
@@ -839,7 +807,7 @@ else:
 
 # Always show all four DRF types
 if 'drf_type' in results_df.columns:
-    drf_types = ['drf_mean', 'drf_sparsemean', 'drf_ctrl', 'drf_interpolated']
+    drf_types = ['drf_mean', 'drf_ctrl', 'drf_interpolated']
     # Create separate heatmaps for each DRF type
     fig, axes = plt.subplots(1, len(drf_types), figsize=(12 * len(drf_types), 8))
     if len(drf_types) == 1:
@@ -875,7 +843,7 @@ if 'drf_type' in results_df.columns:
         ax.set_xlabel('Metric')
         ax.set_ylabel('Dataset')
     
-    plt.suptitle('DRF Types Shown SEPARATELY: Dataset Mean | Sparse Mean | Control | Interpolated (NOT averaged together)', fontsize=16, y=1.02)
+    plt.suptitle('DRF Types Shown SEPARATELY: Dataset Mean | Control | Interpolated (NOT averaged together)', fontsize=16, y=1.02)
     plt.tight_layout()
     plt.savefig(RESULTS_DIR / 'calibration_heatmaps_four_types_separate.png', dpi=300, bbox_inches='tight')
     plt.show()
@@ -918,8 +886,8 @@ else:
 
 print("\nGenerating dataset-level scatter plots (Mean E-distance vs Median DRF) for each metric...")
 
-# Always plot all four DRF types
-drf_types_to_plot = ['drf_mean', 'drf_sparsemean', 'drf_ctrl', 'drf_interpolated']
+# Always plot all DRF types
+drf_types_to_plot = ['drf_mean', 'drf_ctrl', 'drf_interpolated']
 
 # Create a separate plot for each metric
 for metric_name in METRICS_CONFIG.keys():
@@ -963,9 +931,6 @@ for metric_name in METRICS_CONFIG.keys():
             if drf_type == 'drf_mean' and dataset_name in per_pert_drf_mean:
                 if metric_name in per_pert_drf_mean[dataset_name]:
                     metric_drfs = list(per_pert_drf_mean[dataset_name][metric_name].values())
-            elif drf_type == 'drf_sparsemean' and dataset_name in per_pert_drf_sparsemean:
-                if metric_name in per_pert_drf_sparsemean[dataset_name]:
-                    metric_drfs = list(per_pert_drf_sparsemean[dataset_name][metric_name].values())
             elif drf_type == 'drf_ctrl' and dataset_name in per_pert_drf_ctrl:
                 if metric_name in per_pert_drf_ctrl[dataset_name]:
                     metric_drfs = list(per_pert_drf_ctrl[dataset_name][metric_name].values())
@@ -1086,15 +1051,13 @@ if not SKIP_COMPUTATION or (SKIP_COMPUTATION and 'dataset_quality' in locals()):
     # Initialize per_pert_drf dictionaries if they don't exist
     if 'per_pert_drf_mean' not in locals():
         per_pert_drf_mean = per_pert_drf if 'per_pert_drf' in locals() else {}
-    if 'per_pert_drf_sparsemean' not in locals():
-        per_pert_drf_sparsemean = {}
     if 'per_pert_drf_ctrl' not in locals():
         per_pert_drf_ctrl = {}
     if 'per_pert_drf_interpolated' not in locals():
         per_pert_drf_interpolated = {}
 
     # Always plot all four DRF types
-    drf_types_to_plot = ['drf_mean', 'drf_sparsemean', 'drf_ctrl', 'drf_interpolated']
+    drf_types_to_plot = ['drf_mean', 'drf_ctrl', 'drf_interpolated']
 
     # Create a separate plot for each metric
     for metric_name in METRICS_CONFIG.keys():
@@ -1138,9 +1101,6 @@ if not SKIP_COMPUTATION or (SKIP_COMPUTATION and 'dataset_quality' in locals()):
                 if drf_type == 'drf_mean' and dataset_name in per_pert_drf_mean:
                     if metric_name in per_pert_drf_mean[dataset_name]:
                         metric_drfs = list(per_pert_drf_mean[dataset_name][metric_name].values())
-                elif drf_type == 'drf_sparsemean' and dataset_name in per_pert_drf_sparsemean:
-                    if metric_name in per_pert_drf_sparsemean[dataset_name]:
-                        metric_drfs = list(per_pert_drf_sparsemean[dataset_name][metric_name].values())
                 elif drf_type == 'drf_ctrl' and dataset_name in per_pert_drf_ctrl:
                     if metric_name in per_pert_drf_ctrl[dataset_name]:
                         metric_drfs = list(per_pert_drf_ctrl[dataset_name][metric_name].values())
@@ -1257,7 +1217,7 @@ if not SKIP_COMPUTATION or (SKIP_COMPUTATION and 'dataset_quality' in locals()):
 print("\nGenerating DRF vs DEG count plots...")
 
 # Define available DRF columns
-drf_cols_available = ['drf_mean', 'drf_sparsemean', 'drf_ctrl', 'drf_interpolated']
+drf_cols_available = ['drf_mean', 'drf_ctrl', 'drf_interpolated']
 # Check if columns exist in the dataframe
 drf_cols_available = [col for col in drf_cols_available if col in per_pert_df.columns]
 if not drf_cols_available:

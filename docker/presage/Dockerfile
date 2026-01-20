@@ -30,8 +30,8 @@ RUN mamba run -n presage pip install -e /tmp/
 # Then checkout 2c7b231c60cf110c4aab0acf8ecd2c2b3268fffb
 RUN git clone https://github.com/Genentech/PRESAGE.git /presage_repo 
 RUN cd /presage_repo && git checkout 2c7b231c60cf110c4aab0acf8ecd2c2b3268fffb
-RUN cp -r /presage_repo/PRESAGE/src/ /presage_src/
-RUN cp -r /presage_repo/PRESAGE/sample_files/ /presage_src/sample_files/
+RUN cp -r /presage_repo/src/ /presage_src/
+RUN cp -r /presage_repo/sample_files/ /presage_src/sample_files/
 
 # Copy our wrapper files
 COPY docker/presage/presage_wrapper.py docker/presage/run_model.py docker/presage/utils.py docker/presage/cellsimbench_datamodule.py /

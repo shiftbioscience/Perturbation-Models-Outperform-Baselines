@@ -35,7 +35,12 @@ pip install -e .
 
 ```
 
-**Requirements:** Python ≥3.12
+**Requirements:** 
+
+1. Environment with python ≥3.12
+2. Open AI API key (for running scLambda). Create a file (`.env`) with the line `OPENAI_API_KEY=<your_api_key>`. 
+
+
 
 ## Data Preparation
 
