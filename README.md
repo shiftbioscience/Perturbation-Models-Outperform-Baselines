@@ -17,108 +17,52 @@ use only** under the terms of the **Genentech Non-Commercial Software
 License v1.0 (2022)**. See `docker/presage/LICENSE` and `docker/presage/NOTICE`
 for full text and attribution. 
 
+---
 
-## Installation
+## Quickstart
+
+Get up and running with pre-built Docker images and pre-processed datasets.
+
+**Prerequisites:**
+- Python ≥3.12
+- Docker installed and running
+- AWS CLI installed (for downloading datasets)
+- OpenAI API key (only if running scLambda)
+
+**Recommended Hardware (for full reproduction):**
+- 5 GPUs with at least 24GB VRAM each
+- 384GB RAM
+- 64 CPU cores
+- 2TB storage
 
 ```bash
-# Clone the repository
+# 1. Clone and install
 git clone https://github.com/shiftbioscience/Perturbation-Models-Outperform-Baselines
 cd Perturbation-Models-Outperform-Baselines
+uv sync  # or: pip install -e .
+source .venv/bin/activate
 
-# Install using uv (recommended) or pip
-uv sync
-# OR
-pip install -e .
+# 2. Pull pre-built model Docker images
+./scripts/pull_all_models.sh
 
-# Activate the environment
-. ./.venv/bin/activate
-
-```
-
-**Requirements:** 
-
-1. Environment with python ≥3.12
-2. Open AI API key (for running scLambda). Create a file (`.env`) with the line `OPENAI_API_KEY=<your_api_key>`. 
-
-
-
-## Data Preparation
-
-Process all 14 Perturb-seq datasets:
-
-```bash
-# Step 1: Download and preprocess all datasets
-# This runs each dataset's get_data.py script in parallel
-python data/run_all_get_data.py --workers 4
-
-# Step 2: Calculate ground truth DEGs (first half of technical duplicates)
-python data/add_ground_truth_degs.py --all --workers 4
-
-# Step 3: Add interpolated duplicate baseline (positive control)
-python data/add_interpolated_baseline.py --all --workers 4
-
-# Step 4: Generate foundation model embeddings (ESM2, Geneformer, GenePT, scGPT) for Norman19 dataset
-# OPTIONAL unless you plan to run the fMLP models.
-# First, create the required conda environments:
-conda env create -f data/gene_embeddings/envs/src-geneformer.yaml
-conda env create -f data/gene_embeddings/envs/src-esm2.yaml
-conda env create -f data/gene_embeddings/envs/src-scgpt.yaml
-
-# Then generate embeddings (this step is required before transferring embeddings to other datasets)
-bash data/gene_embeddings/gather_embeddings.sh \
-    data/norman19/norman19_processed_complete.h5ad \
-    data/norman19/norman19_processed_complete.embeddings.h5ad
-
-# Step 5: Transfer gene embeddings across all datasets
-# Uses norman19 as reference for ESM2, Geneformer, GenePT embeddings
-python data/batch_transfer_embeddings.py --workers 4
-```
-
-**Note:** The full pipeline may take several hours depending on your system. Each script supports `--force` to recompute existing data.
-
-**Requirements for Step 4:**
-- Conda must be installed and available in PATH
-- The conda environments (`src-scgpt`, `src-geneformer`, `src-esm2`) must be created before running `gather_embeddings.sh`
-- The script can be run from the project root: `bash data/gene_embeddings/gather_embeddings.sh ...`
-- The geneformer package will be automatically installed from HuggingFace when the script runs
-
-**Caching behavior:**
-- The script caches intermediate results for each stage (GenePT, scGPT, Geneformer, ESM2)
-- If a stage has already been completed, it will be skipped on subsequent runs
-- To force regeneration of all embeddings, add `--force` flag:
-  ```bash
-  bash data/gene_embeddings/gather_embeddings.sh INPUT OUTPUT --force
-  ```
-
-**What these scripts do:**
-- `run_all_get_data.py` - Downloads raw data from sources, performs QC, creates train/test splits
-- `add_ground_truth_degs.py` - Calculates DEGs from first half of tech duplicate splits for calibration
-- `add_interpolated_baseline.py` - Creates interpolated duplicate baseline (key positive control)
-- `gather_embeddings.sh` - Generates foundation model gene embeddings (GenePT, scGPT, Geneformer, ESM2). Requires conda environments to be created first
-- `batch_transfer_embeddings.py` - Transfers gene embeddings from reference dataset to all other datasets
-
-## Building Model Docker Containers
-
-Each model runs in an isolated Docker container. To reproduce model benchmarks, build the required containers:
-
-```bash
-# Build all models
-bash docker/fmlp/build.sh
-bash docker/gears/build.sh
-bash docker/sclambda/build.sh
-bash docker/scgpt/build.sh
+# 3. Build PRESAGE manually (not distributed due to license restrictions)
 bash docker/presage/build.sh
-bash docker/geneformer/build.sh
 
-# Or build individually as needed
-bash docker/<model_name>/build.sh
+# 4. Download pre-processed datasets
+./scripts/pull_all_datasets.sh
+
+# 5. (Optional) Create .env file for scLambda
+echo "OPENAI_API_KEY=<your_api_key>" > .env
+
+# 6. Run a benchmark
+uv run cellsimbench benchmark model=gears dataset=norman19
 ```
 
-**Note:** Docker must be installed and running. Building all containers may take 30-60 minutes.
+---
 
 ## Running Model Benchmarks
 
-After building containers and downloading data, train and evaluate models:
+After setup, train and evaluate models on any of the 14 datasets:
 
 ```bash
 # Train a model on a dataset
@@ -127,14 +71,18 @@ uv run cellsimbench train model=fmlp_esm2 dataset=norman19
 # Run benchmark (prediction + evaluation)
 uv run cellsimbench benchmark model=fmlp_esm2 dataset=norman19
 
-# Train on all datasets (for multi-dataset analysis)
+# Train and benchmark across multiple datasets
 for dataset in adamson16 norman19 replogle22k562 replogle22rpe1; do
     uv run cellsimbench train model=fmlp_esm2 dataset=$dataset
     uv run cellsimbench benchmark model=fmlp_esm2 dataset=$dataset
 done
 ```
 
-**Available models:** `fmlp_esm2`, `fmlp_geneformer`, `fmlp_genept`, `gears`, `sclambda`, `scgpt`, `presage`, `geneformer`
+**Available models:** `fmlp_esm2`, `fmlp_geneformer`, `fmlp_scgpt`, `fmlp_genept`, `gears`, `sclambda`, `scgpt`, `presage`
+
+**Available datasets:** `adamson16`, `frangieh21`, `kaden25fibroblast`, `kaden25rpe1`, `nadig25hepg2`, `nadig25jurkat`, `norman19`, `replogle22k562`, `replogle22k562gwps`, `replogle22rpe1`, `sunshine23`, `tian21crispra`, `tian21crispri`, `wessels23`
+
+---
 
 ## Reproducing the Analyses
 
@@ -143,13 +91,12 @@ done
 Examines how the mean baseline is a better estimator than the technical duplicate baseline when genes are not significantly detected as DEGs. Also shows the effect of sample size on the technical duplicate baseline:
 
 ```bash
-# From project root
 uv run python analyses/perturbation_strength/perturbation_strenght.py
 ```
 
-### 2. Calibration Analysis (`analyses/calibration/`)
+### 2. Calibration Analysis
 
-This analysis computes the Dynamic Range Fraction (DRF) and other calibration metrics across all datasets and evaluation metrics.
+Computes the Dynamic Range Fraction (DRF) and other calibration metrics across all datasets and evaluation metrics.
 
 ```bash
 # Run baseline calculations for all datasets
@@ -171,7 +118,7 @@ After running model benchmarks, generate summary visualizations:
 python scripts/plot_multimodel_summary.py outputs/benchmark_*/detailed_metrics.csv
 ```
 
-### 4. Figure Generation (`analyses/plotting/`)
+### 4. Figure Generation
 
 Generates main and supplementary figures including MSE comparisons, DRF heatmaps, and GSEA self-enrichment analysis:
 
@@ -190,9 +137,88 @@ Rscript -e "renv::restore()"
 Rscript -e "rmarkdown::render('cellsimbench_figs_R.rmd')"
 ```
 
-See `analyses/plotting/README.md` for detailed documentation.
+See `analyses/plotting/README.md` for detailed documentation and the preprint for full details on metric definitions and calibration assessment.
 
-See the preprint for full details on metric definitions and calibration assessment.
+---
+
+## Building From Scratch
+
+This section is for users who want to rebuild the datasets and Docker containers from source rather than using the pre-built versions.
+
+### Data Preparation
+
+Process all 14 Perturb-seq datasets from raw sources:
+
+```bash
+# Step 1: Download and preprocess all datasets
+# This runs each dataset's get_data.py script in parallel
+python data/run_all_get_data.py --workers 4
+
+# Step 2: Calculate ground truth DEGs (first half of technical duplicates)
+python data/add_ground_truth_degs.py --all --workers 4
+
+# Step 3: Add interpolated duplicate baseline (positive control)
+python data/add_interpolated_baseline.py --all --workers 4
+```
+
+**Note:** The full pipeline may take several hours depending on your system. Each script supports `--force` to recompute existing data.
+
+**What these scripts do:**
+- `run_all_get_data.py` - Downloads raw data from sources, performs QC, creates train/test splits
+- `add_ground_truth_degs.py` - Calculates DEGs from first half of tech duplicate splits for calibration
+- `add_interpolated_baseline.py` - Creates interpolated duplicate baseline (key positive control)
+
+### Generating Gene Embeddings (Optional)
+
+Required only if you plan to run the fMLP models (fmlp_esm2, fmlp_geneformer, fmlp_genept):
+
+```bash
+# Create the required conda environments
+conda env create -f data/gene_embeddings/envs/src-geneformer.yaml
+conda env create -f data/gene_embeddings/envs/src-esm2.yaml
+conda env create -f data/gene_embeddings/envs/src-scgpt.yaml
+
+# Generate embeddings for Norman19 (reference dataset)
+bash data/gene_embeddings/gather_embeddings.sh \
+    data/norman19/norman19_processed_complete.h5ad \
+    data/norman19/norman19_processed_complete.embeddings.h5ad
+
+# Transfer gene embeddings to all other datasets
+python data/batch_transfer_embeddings.py --workers 4
+```
+
+**Requirements:**
+- Conda must be installed and available in PATH
+- The conda environments (`src-scgpt`, `src-geneformer`, `src-esm2`) must be created before running `gather_embeddings.sh`
+- The geneformer package will be automatically installed from HuggingFace when the script runs
+
+**Caching behavior:**
+- The script caches intermediate results for each stage (GenePT, scGPT, Geneformer, ESM2)
+- If a stage has already been completed, it will be skipped on subsequent runs
+- To force regeneration of all embeddings, add `--force` flag:
+  ```bash
+  bash data/gene_embeddings/gather_embeddings.sh INPUT OUTPUT --force
+  ```
+
+### Building Model Docker Containers
+
+Each model runs in an isolated Docker container. Build them from source:
+
+```bash
+# Build all models
+bash docker/fmlp/build.sh
+bash docker/gears/build.sh
+bash docker/sclambda/build.sh
+bash docker/scgpt/build.sh
+bash docker/presage/build.sh
+
+# Or build individually as needed
+bash docker/<model_name>/build.sh
+```
+
+**Note:** Docker must be installed and running. Building all containers may take 30-60 minutes.
+
+---
 
 ## Citation
 
@@ -211,6 +237,3 @@ If you use this code or data, please cite:
 ## Contact
 
 For questions, contact: henry@shiftbioscience.com
-
-
-

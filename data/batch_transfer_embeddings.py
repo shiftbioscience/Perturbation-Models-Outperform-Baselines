@@ -202,9 +202,6 @@ def main():
         with open(yaml_path, 'r') as f:
             config = yaml.safe_load(f)
         
-        if not 'gwps' in str(yaml_path):
-            continue
-        
         data_path = config.get('data_path')
         if not data_path or not Path(data_path).exists():
             continue

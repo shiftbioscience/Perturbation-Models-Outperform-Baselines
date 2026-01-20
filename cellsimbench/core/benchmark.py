@@ -815,7 +815,7 @@ class BenchmarkRunner:
         print("="*(total_width+2))
         
         # Header with ALL metrics
-        print(f"{'Model':<{model_col_width}} {'MSE':<8} {'WMSE':<8} {'rΔ Ctrl':<10} {'rΔ Ctrl DEG':<12} {'rΔ Pert':<10} {'rΔ Pert DEG':<12} {'R²Δ Ctrl':<10} {'R²Δ Ctrl DEG':<12} {'R²Δ Pert':<10} {'R²Δ Pert DEG':<12} {'WR²Δ Ctrl':<10} {'WR²Δ Pert':<10} {'Cent Acc':<9}")
+        print(f"{'Model':<{model_col_width}} {'MSE':<8} {'WMSE':<8} {'rΔ Ctrl':<10} {'rΔ Ctrl DEG':<12} {'rΔ Pert':<10} {'rΔ Pert DEG':<12} {'R²Δ Ctrl':<10} {'R²Δ Ctrl DEG':<12} {'R²Δ Pert':<10} {'R²Δ Pert DEG':<12} {'WR²Δ Ctrl':<10} {'WR²Δ Pert':<10} {'NIR':<9}")
         print("-" * total_width)
         
         # Model rows

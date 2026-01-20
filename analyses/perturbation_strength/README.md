@@ -4,7 +4,7 @@ This folder contains analyses examining how the mean baseline is a better estima
 
 ## Scripts
 
-### `perturbation_strenght.py`
+### `perturbation_strength.py`
 Generates supplementary figures comparing Technical Duplicate baseline vs Mean Baseline performance across perturbations with varying numbers of DEGs.
 
 **Figures generated:**
@@ -20,7 +20,7 @@ To run the script, use the following command:
 
 ```bash
 # From project root
-uv run python analyses/perturbation_strength/perturbation_strenght.py
+uv run python analyses/perturbation_strength/perturbation_strength.py
 
 # Or interactively from this directory (cell-by-cell execution supported)
 ```
