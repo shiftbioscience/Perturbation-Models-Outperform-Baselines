@@ -31,7 +31,7 @@ Get up and running with pre-built Docker images and pre-processed datasets.
 - *Optional:* A conda environment with R (see `analyses/plotting/README.md`). Only for reproducing R-based plots.
 
 **Recommended Hardware (for full reproduction):**
-- 5 GPUs with at least 24GB VRAM each
+- 5 GPUs with at least 24GB VRAM each (run with 8xA10 instance).
 - 384GB CPU RAM
 - 64 CPU cores
 - 2TB storage
