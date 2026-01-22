@@ -18,6 +18,7 @@ outputs
 *.zip
 *.fa
 *.xlsx
+*sggm*
 *.tsv
 *.pt
 *.ckpt
