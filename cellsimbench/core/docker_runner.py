@@ -35,9 +35,10 @@ class DockerRunner:
         """Initialize DockerRunner and check Docker availability."""
         try:
             self.docker_client: Optional[docker.DockerClient] = docker.from_env()
-        except docker.errors.DockerException:
-            log.warning("Docker not available.")
-            self.docker_client = None
+        except docker.errors.DockerException as e:
+            log.warning(f"Docker not available: {e}")
+            raise RuntimeError("Docker not available. Check that Docker is installed and has permissions to access the Docker daemon. E.g., check that `docker run hello-world` works.")
+    
     
     def run_container(
         self,
