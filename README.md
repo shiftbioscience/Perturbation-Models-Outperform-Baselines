@@ -27,7 +27,7 @@ Get up and running with pre-built Docker images and pre-processed datasets.
 - Python ≥3.12
 - Docker installed and running
 - AWS CLI installed (for downloading datasets)
-- OpenAI API key (only if running scLambda)
+- OpenAI API key (required if running scLambda)
 - *Optional:* A conda environment with R (see `analyses/plotting/README.md`). Only for reproducing R-based plots.
 
 **Recommended Hardware (for full reproduction):**
@@ -52,7 +52,7 @@ source .venv/bin/activate
 # 4. Download pre-processed datasets
 ./scripts/pull_all_datasets.sh
 
-# 5. (Optional) Create .env file for scLambda
+# 5. Create .env file (required if running scLambda)
 echo "OPENAI_API_KEY=<your_api_key>" > .env
 
 # 6. Run a benchmark

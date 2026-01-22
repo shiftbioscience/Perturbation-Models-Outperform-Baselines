@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y wget git && rm -rf /var/lib/apt/lists/*
 
 # Download PRESAGE embeddings cache
 WORKDIR /
-RUN wget -c -O cache.tar.gz https://zenodo.org/records/15587986/files/cache.tar.gz?download=1 && \
-    tar --no-same-owner -xzf cache.tar.gz && rm cache.tar.gz
+RUN wget -c -O cache.tar.gz https://zenodo.org/records/15587986/files/cache.tar.gz?download=1 
+RUN tar --no-same-owner -xzf cache.tar.gz && rm cache.tar.gz
 
 # Clone PRESAGE repository to /presage_src https://github.com/Genentech/PRESAGE.git
 # Then checkout 2c7b231c60cf110c4aab0acf8ecd2c2b3268fffb
