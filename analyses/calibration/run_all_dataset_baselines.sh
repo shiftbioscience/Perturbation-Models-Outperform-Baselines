@@ -147,3 +147,40 @@ if [ ${#FAILED[@]} -gt 0 ]; then
     echo "Check log files in ${LOG_DIR} for error details"
 fi
 echo "========================================="
+
+# Move outputs from outputs/ to the target directory
+echo ""
+echo "========================================="
+echo "Moving outputs to ${OUTPUT_BASE_DIR}..."
+echo "========================================="
+
+for dataset in "${DATASETS[@]}"; do
+    source_dir="outputs/baselines_${dataset}"
+    target_dir="${OUTPUT_BASE_DIR}/${dataset}"
+    
+    if [ -d "$source_dir" ]; then
+        # Find the latest timestamp directory
+        latest_timestamp=$(ls -1t "$source_dir" 2>/dev/null | head -n1)
+        
+        if [ -n "$latest_timestamp" ] && [ -d "$source_dir/$latest_timestamp" ]; then
+            # Create target directory if it doesn't exist
+            mkdir -p "$target_dir"
+            
+            # Move contents from latest timestamp dir to target
+            echo "  ${dataset}: Moving $source_dir/$latest_timestamp/* -> $target_dir/"
+            mv "$source_dir/$latest_timestamp"/* "$target_dir/"
+            
+            # Remove the now-empty timestamp directory and parent if empty
+            rmdir "$source_dir/$latest_timestamp" 2>/dev/null
+            rmdir "$source_dir" 2>/dev/null
+        else
+            echo "  ${dataset}: No timestamp directory found in $source_dir"
+        fi
+    else
+        echo "  ${dataset}: Source directory $source_dir not found (may have already been moved)"
+    fi
+done
+
+echo "========================================="
+echo "Output migration complete!"
+echo "========================================="
