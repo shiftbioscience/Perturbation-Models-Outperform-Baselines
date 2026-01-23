@@ -563,8 +563,23 @@ class SCLambdaModel:
         """Compute perturbation embeddings for all cells."""
         self.pert_emb_cells = np.zeros((self.adata.shape[0], self.p_dim), dtype=np.float32)
         self.pert_emb = {}
+        
+        # Track missing genes for diagnostic logging
+        missing_genes_in_conditions = set()
+        conditions_with_missing_genes = []
+        conditions_with_all_zero_emb = []
+        
+        log.info(f"Gene embeddings available: {len(self.gene_embeddings)} keys")
+        log.info(f"Processing {len(self.adata.obs['condition'].unique())} unique conditions")
+        
         for condition in tqdm(self.adata.obs['condition'].unique(), desc="Computing perturbation embeddings"):
             genes = condition.split('+')
+            
+            # Track missing genes
+            missing_in_this_condition = [g for g in genes if g not in self.gene_embeddings and g != 'ctrl']
+            if missing_in_this_condition:
+                missing_genes_in_conditions.update(missing_in_this_condition)
+                conditions_with_missing_genes.append(condition)
             
             if len(genes) > 1 and self.multi_gene:
                 # Combination perturbation: add embeddings
@@ -573,11 +588,30 @@ class SCLambdaModel:
                 # Single perturbation
                 pert_emb_p = self.gene_embeddings.get(genes[0], np.zeros(self.p_dim))
             
+            # Track all-zero embeddings
+            if np.all(pert_emb_p == 0) and condition != 'ctrl':
+                conditions_with_all_zero_emb.append(condition)
+            
             # Assign to cells with this condition
             mask = self.adata.obs['condition'] == condition
             self.pert_emb_cells[mask] = pert_emb_p.reshape(1, -1)
             self.pert_emb[condition] = pert_emb_p.astype(np.float32)
+        
         self.adata.obsm['pert_emb'] = self.pert_emb_cells
+        
+        # Log diagnostic summary
+        if missing_genes_in_conditions:
+            log.warning(f"MISSING GENES: {len(missing_genes_in_conditions)} genes not found in embeddings")
+            log.warning(f"Missing genes: {sorted(list(missing_genes_in_conditions))[:20]}")
+            log.warning(f"Conditions affected: {len(conditions_with_missing_genes)}")
+        
+        if conditions_with_all_zero_emb:
+            log.warning(f"CONDITIONS WITH ALL-ZERO EMBEDDINGS: {len(conditions_with_all_zero_emb)}")
+            log.warning(f"Affected conditions (first 10): {conditions_with_all_zero_emb[:10]}")
+        
+        # Log embedding statistics
+        non_zero_cells = np.any(self.pert_emb_cells != 0, axis=1).sum()
+        log.info(f"Cells with non-zero perturbation embeddings: {non_zero_cells}/{len(self.pert_emb_cells)}")
 
     def _process_control_data(self):
         """Process control cells and center expression data."""
@@ -643,17 +677,57 @@ class SCLambdaModel:
 
     def _prepare_data_splits(self, split_name: str):
         """Prepare training and validation splits."""
+        log.info(f"Preparing data splits using column: '{split_name}'")
+        log.info(f"Available columns in adata.obs: {list(self.adata.obs.columns)}")
+        
         if split_name not in self.adata.obs.columns:
-            raise ValueError(f"Split column '{split_name}' not found in adata.obs")
+            raise ValueError(
+                f"Split column '{split_name}' not found in adata.obs. "
+                f"Available columns: {list(self.adata.obs.columns)}"
+            )
+        
+        # Log split column statistics before filtering
+        split_value_counts = self.adata.obs[split_name].value_counts().to_dict()
+        log.info(f"Split column '{split_name}' value counts BEFORE filtering: {split_value_counts}")
         
         # Examine self.pert_emb_cells and remove perturbations where all the cells are 0
         all_zero_pert = np.all(self.pert_emb_cells == 0, axis=1)
+        n_all_zero = all_zero_pert.sum()
+        n_total = len(all_zero_pert)
+        log.info(f"Cells with all-zero perturbation embeddings: {n_all_zero}/{n_total} ({100*n_all_zero/n_total:.1f}%)")
+        
+        if n_all_zero == n_total:
+            raise ValueError(
+                "ALL cells have all-zero perturbation embeddings! "
+                "This likely means the gene embeddings don't match the dataset's genes. "
+                "Try deleting the cached gene_embeddings.pkl file and re-running."
+            )
+        
         self.adata = self.adata[~all_zero_pert]
-        # TODO: Examine whether we should do something else here.
+        log.info(f"Cells remaining after filtering: {len(self.adata)}")
+        
+        # Log split column statistics after filtering
+        split_value_counts_after = self.adata.obs[split_name].value_counts().to_dict()
+        log.info(f"Split column '{split_name}' value counts AFTER filtering: {split_value_counts_after}")
         
         self.adata_train = self.adata[self.adata.obs[split_name] == 'train']
         self.adata_val = self.adata[self.adata.obs[split_name] == 'val']
         self.pert_val = self.adata_val.obs['condition'].unique()
+        
+        log.info(f"Training cells: {len(self.adata_train)}")
+        log.info(f"Validation cells: {len(self.adata_val)}")
+        log.info(f"Validation perturbations: {len(self.pert_val)}")
+        
+        # Check for empty training set before creating DataLoader
+        if len(self.adata_train) == 0:
+            raise ValueError(
+                f"No training cells found after filtering! "
+                f"Split column '{split_name}' had values: {split_value_counts}. "
+                f"After filtering all-zero embeddings ({n_all_zero} cells removed), "
+                f"remaining split values: {split_value_counts_after}. "
+                f"Possible causes: 1) Gene embeddings don't match dataset genes (delete cached gene_embeddings.pkl), "
+                f"2) Wrong split column name, 3) Split column doesn't have 'train' values."
+            )
         
         # Create training dataset
         train_x = torch.from_numpy(self.adata_train.X).float().to(self.device)
@@ -1099,12 +1173,30 @@ class SCLambdaWrapper:
             log.info("Loading gene embeddings from file...")
             with open(Path(self.embedding_config['cache_dir']) / 'gene_embeddings.pkl', 'rb') as f:
                 self.gene_embeddings = pickle.load(f)
+            
+            # Validate cached embeddings match the dataset's genes
+            log.info(f"Loaded {len(self.gene_embeddings)} gene embeddings from cache")
+            embedding_keys = list(self.gene_embeddings.keys())
+            log.info(f"Gene embeddings keys (first 10): {embedding_keys[:10]}")
+            log.info(f"Required genes from dataset: {len(unique_genes)}")
+            log.info(f"Required genes (first 10): {unique_genes[:10]}")
+            
+            # Check for missing genes
+            missing_genes = set(unique_genes) - set(self.gene_embeddings.keys())
+            if missing_genes:
+                log.warning(f"MISSING GENES in cached embeddings: {len(missing_genes)} genes not found!")
+                log.warning(f"Missing genes (first 20): {sorted(list(missing_genes))[:20]}")
+                log.warning("This may cause all-zero embeddings and empty training data. "
+                           "Consider deleting the cached gene_embeddings.pkl file to regenerate.")
         
         # Initialize and train model
         log.info("Initializing scLambda model...")
         hyperparams = self.config['hyperparameters']
         if not hyperparams['use_delta']:
             raise ValueError("use_delta must be True")
+        
+        # Log the split configuration
+        log.info(f"Config split_name: '{self.config['split_name']}'")
         
         self.model = SCLambdaModel(
             adata=adata_sclambda,
