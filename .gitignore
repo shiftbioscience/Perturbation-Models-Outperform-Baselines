@@ -19,6 +19,7 @@ outputs
 *.fa
 *.xlsx
 *sggm*
+newdev
 *.tsv
 *.pt
 *.ckpt
