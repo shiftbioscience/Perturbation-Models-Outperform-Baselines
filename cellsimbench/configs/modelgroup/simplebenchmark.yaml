@@ -3,6 +3,7 @@
 
 models:
   - sclambda
+  - presage
   - fmlp_esm2
 
 description: "Compare some different perturbation response models" 

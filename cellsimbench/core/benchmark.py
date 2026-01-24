@@ -558,13 +558,14 @@ class BenchmarkRunner:
             control_pred = fold_baselines['control'] if 'control' in fold_baselines else universal_baselines['control']
             delta_ctrl = np.zeros_like(predictions.X)
             # Find intersection of control and predictions var_names
-            common_var_names = set(control_pred.var_names) & set(predictions.var_names)
+            # Use sorted list to ensure deterministic, reproducible ordering
+            common_var_names = sorted(set(control_pred.var_names) & set(predictions.var_names))
             if not common_var_names:
                 raise ValueError("No common variable names found between control and predictions")
             
             # Filter control and predictions to only include common var_names
-            control_pred = control_pred[:, list(common_var_names)]
-            predictions = predictions[:, list(common_var_names)]
+            control_pred = control_pred[:, common_var_names]
+            predictions = predictions[:, common_var_names]
             
             for i, cov in enumerate(tqdm(predictions.obs['covariate'], desc="Adding delta from control")):
                 # Find matching control - MUST exist
@@ -583,13 +584,14 @@ class BenchmarkRunner:
             dataset_mean_pred = fold_baselines['dataset_mean']
             delta_mean = np.zeros_like(predictions.X)
             # Find intersection of dataset mean and predictions var_names
-            common_var_names = set(dataset_mean_pred.var_names) & set(predictions.var_names)
+            # Use sorted list to ensure deterministic, reproducible ordering
+            common_var_names = sorted(set(dataset_mean_pred.var_names) & set(predictions.var_names))
             if not common_var_names:
                 raise ValueError("No common variable names found between dataset mean and predictions")
             
             # Filter dataset mean and predictions to only include common var_names
-            dataset_mean_pred = dataset_mean_pred[:, list(common_var_names)]
-            predictions = predictions[:, list(common_var_names)]
+            dataset_mean_pred = dataset_mean_pred[:, common_var_names]
+            predictions = predictions[:, common_var_names]
             
             for i, cov in enumerate(tqdm(predictions.obs['covariate'], desc="Adding delta from dataset mean")):
                 # Find matching dataset mean - MUST exist

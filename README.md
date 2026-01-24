@@ -75,6 +75,9 @@ uv run cellsimbench train model=fmlp_esm2 dataset=norman19
 # Run benchmark (prediction + evaluation)
 uv run cellsimbench benchmark model=fmlp_esm2 dataset=norman19
 
+# Enable NIR (Nearest In-distribution Reference) analysis (slow)
+uv run cellsimbench benchmark model=fmlp_esm2 dataset=norman19 +run_nir_analysis=true
+
 # Train and benchmark across multiple datasets
 for dataset in norman19 wessels23; do
     uv run cellsimbench train model=fmlp_esm2 dataset=$dataset

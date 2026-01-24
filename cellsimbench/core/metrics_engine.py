@@ -40,16 +40,15 @@ class MetricsEngine:
     ) -> Dict[str, Dict[str, float]]:
 
         # Ensure predictions and ground truth have the same var_names
-        common_var_names = set(predictions.columns) & set(ground_truth.columns)
-        common_var_names_mask = ground_truth.columns.isin(common_var_names)
+        # Use sorted list to ensure deterministic, reproducible ordering
+        common_var_names = sorted(set(predictions.columns) & set(ground_truth.columns))
 
         if not common_var_names:
             raise ValueError("Predictions and ground truth have different var_names")
-        predictions = predictions[list(common_var_names)]
-        ground_truth = ground_truth[list(common_var_names)]
-        predictions_deltas = {key: df[list(common_var_names)] for key, df in predictions_deltas.items()}
-        ground_truth_deltas = {key: df[list(common_var_names)] for key, df in ground_truth_deltas.items()}
-        # Get a mask of the common var_names found in the predictions to use for filtering
+        predictions = predictions[common_var_names]
+        ground_truth = ground_truth[common_var_names]
+        predictions_deltas = {key: df[common_var_names] for key, df in predictions_deltas.items()}
+        ground_truth_deltas = {key: df[common_var_names] for key, df in ground_truth_deltas.items()}
 
 
         # Calculate nir scores (needs full dataset) - only if enabled
@@ -90,8 +89,8 @@ class MetricsEngine:
 
 
             # Get DEG weights and mask using covariate and perturbation
-            weights = self.data_manager.get_deg_weights(covariate_value, condition, common_var_names)
-            deg_mask = self.data_manager.get_deg_mask(covariate_value, condition, common_var_names_mask=common_var_names_mask)
+            weights = self.data_manager.get_deg_weights(covariate_value, condition, gene_order=common_var_names)
+            deg_mask = self.data_manager.get_deg_mask(covariate_value, condition, gene_order=common_var_names)
             condition_metrics[cov_pert_key] = {
                 'mse': self._calculate_mse(pred_expression, truth_expression),
                 'wmse': self._calculate_wmse(pred_expression, truth_expression, weights),
