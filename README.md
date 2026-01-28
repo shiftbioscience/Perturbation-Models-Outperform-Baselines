@@ -1,4 +1,4 @@
-# Deep Learning-Based Genetic Perturbation Models Do Outperform Uninformative Baselines on Well-Calibrated Metrics
+# Deep Learning-Based Genetic Perturbation Models *Do* Outperform Uninformative Baselines on Well-Calibrated Metrics
 
 **Preprint:** https://www.biorxiv.org/content/10.1101/2025.10.20.683304v1
 
