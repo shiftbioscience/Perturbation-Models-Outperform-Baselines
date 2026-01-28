@@ -213,17 +213,16 @@ class DataManager:
         split_columns = [col for col in self.adata.obs.columns if 'split' in col.lower()]
         return split_columns
     
-    def get_deg_weights(self, covariate_value: str, perturbation: str, gene_order: List[str]) -> np.ndarray:
+    def get_deg_weights(self, covariate_value: str, perturbation: str, common_var_names: np.ndarray=None) -> np.ndarray:
         """
         Get DEG-based weights for a specific covariate-perturbation combination.
         
         Args:
             covariate_value: Value of the covariate (e.g., donor ID)
             perturbation: Perturbation identifier
-            gene_order: Ordered list of gene names to align weights to.
             
         Returns:
-            Array of weights aligned with gene_order
+            Array of weights aligned with adata.var_names
         """
         cov_pert_key = f"{covariate_value}_{perturbation}"
         
@@ -231,34 +230,40 @@ class DataManager:
             weights = self.pert_normalized_abs_scores_vsrest_df[cov_pert_key]
         else:
             # Return zero weights if no DEG data available
-            return np.zeros(len(gene_order))
+            weights = np.zeros(self.adata.n_vars)
+            return weights
 
-        # Reindex weights to match the target gene order
-        weights = weights.reindex(gene_order, fill_value=0.0)
+        # Filter the weights to only include the common var_names
+        if common_var_names is not None:
+            weights = weights[list(common_var_names)]
 
         return weights.values
     
-    def get_deg_mask(self, covariate_value: str, perturbation: str, gene_order: List[str], pval_threshold: float = 0.05) -> np.ndarray:
+    def get_deg_mask(self, covariate_value: str, perturbation: str, pval_threshold: float = 0.05, common_var_names_mask: np.ndarray=None) -> np.ndarray:
         """
         Get DEG mask for a specific covariate-perturbation combination.
         
         Args:
             covariate_value: Value of the covariate (e.g., donor ID)
             perturbation: Perturbation identifier
-            gene_order: Ordered list of gene names to align the mask to.
             pval_threshold: P-value threshold for significance
             
         Returns:
-            Boolean array indicating DEG positions, aligned to gene_order
+            Boolean array indicating DEG positions
         """
         cov_pert_key = f"{covariate_value}_{perturbation}"
         
         if cov_pert_key not in self.deg_pvals_dict:
-            return np.zeros(len(gene_order), dtype=bool)
+            return np.zeros(self.adata.n_vars, dtype=bool)
         
-        # Get p-values and gene names (these are in DEG rank order, not var_names order)
+        # Get p-values and gene names
         pvals = self.deg_pvals_dict[cov_pert_key]
         gene_names = self.deg_names_dict[cov_pert_key]
+
+        if common_var_names_mask is not None:
+            pvals = pvals[common_var_names_mask]
+            gene_names = gene_names[common_var_names_mask]
+
         
         # Create boolean mask for significant genes
         sig_mask = pvals < pval_threshold
@@ -273,10 +278,9 @@ class DataManager:
         # Group by gene and take minimum p-value, then check significance
         pvals_aggregated = pvals_df.groupby('gene')['pval'].min()
         deg_mask_aggregated = pvals_aggregated < pval_threshold
-
         
-        # Reindex to match the target gene order
-        deg_mask = deg_mask_aggregated.reindex(gene_order, fill_value=False)
+        # Reindex to match adata.var_names
+        deg_mask = deg_mask_aggregated.reindex(self.adata.var_names[common_var_names_mask] if common_var_names_mask is not None else self.adata.var_names, fill_value=False)
         
         return deg_mask.values
     
