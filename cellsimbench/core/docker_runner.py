@@ -6,6 +6,7 @@ Provides unified Docker container management for model training and inference.
 
 import docker
 import logging
+import os
 from pathlib import Path
 from typing import Dict, List, Deque, Optional, Any
 from collections import deque
@@ -104,12 +105,24 @@ class DockerRunner:
         
         # Add GPU support if enabled
         if docker_config.get('gpu', True):
-            if gpu_id is not None:
+            effective_gpu_id = gpu_id
+            if effective_gpu_id is None:
+                # Fall back to the host shell's CUDA_VISIBLE_DEVICES so that
+                # JAX (which preallocates 75% of every visible GPU at import)
+                # is pinned to a single physical device when the user scopes
+                # GPUs externally. See docker/cellflow for why this matters.
+                cuda_visible = os.environ.get('CUDA_VISIBLE_DEVICES')
+                if cuda_visible is not None and cuda_visible.strip():
+                    visible = [g.strip() for g in cuda_visible.split(',') if g.strip()]
+                    if len(visible) == 1:
+                        effective_gpu_id = int(visible[0])
+
+            if effective_gpu_id is not None:
                 # Assign specific GPU to this container
                 container_args['device_requests'] = [
-                    docker.types.DeviceRequest(device_ids=[str(gpu_id)], capabilities=[['gpu']])
+                    docker.types.DeviceRequest(device_ids=[str(effective_gpu_id)], capabilities=[['gpu']])
                 ]
-                log.info(f"Assigning GPU {gpu_id} to container")
+                log.info(f"Assigning GPU {effective_gpu_id} to container")
             else:
                 # Default: give access to all GPUs
                 container_args['device_requests'] = [
